@@ -219,6 +219,15 @@
     background:var(--charcoal-2); border:1px solid var(--line-dark); color:#fff;
   }
   .auth-field input:focus{ outline:none; border-color:var(--gold); }
+  .password-field-wrap{ position:relative; }
+  .password-field-wrap input{ padding-right:56px; }
+  .password-toggle{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:var(--gold); font-size:10.5px; font-weight:700;
+    cursor:pointer; padding:6px 8px; text-transform:uppercase; letter-spacing:0.5px;
+    font-family:inherit;
+  }
+  .password-toggle:hover{ color:#fff; }
   .auth-remember-row{ display:flex; align-items:center; gap:8px; margin-bottom:16px; }
   .auth-remember-row input{ width:15px; height:15px; accent-color:var(--gold-deep); cursor:pointer; }
   .auth-remember-row label{ font-size:12.5px; color:#C9C4B8; cursor:pointer; margin:0; text-transform:none; letter-spacing:0; }
@@ -299,7 +308,10 @@
       </div>
       <div class="auth-field">
         <label>Password</label>
-        <input type="password" id="auth-password" autocomplete="current-password" required minlength="6" />
+        <div class="password-field-wrap">
+          <input type="password" id="auth-password" autocomplete="current-password" required minlength="6" />
+          <button type="button" class="password-toggle" id="password-toggle-btn" data-always-enabled="true">Show</button>
+        </div>
       </div>
       <div class="auth-remember-row">
         <input type="checkbox" id="auth-remember" checked />
@@ -830,6 +842,14 @@ function setupAuthForm(){
   const submitBtn = document.getElementById("auth-submit-btn");
   const rememberChk = document.getElementById("auth-remember");
   rememberChk.checked = getRememberPref();
+
+  const pwInput = document.getElementById("auth-password");
+  const pwToggleBtn = document.getElementById("password-toggle-btn");
+  pwToggleBtn.addEventListener("click", () => {
+    const showing = pwInput.type === "text";
+    pwInput.type = showing ? "password" : "text";
+    pwToggleBtn.textContent = showing ? "Show" : "Hide";
+  });
 
   modeLink.addEventListener("click", () => {
     authMode = authMode === "login" ? "signup" : "login";
