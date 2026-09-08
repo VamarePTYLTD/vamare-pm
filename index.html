@@ -294,14 +294,21 @@
   .notif-dropdown-head{
     padding:12px 16px; font-weight:700; font-size:12.5px; letter-spacing:0.3px;
     border-bottom:1px solid var(--line); background:var(--cream); color:var(--ink);
+    display:flex; align-items:center; justify-content:space-between;
   }
-  .notif-item{ padding:12px 16px; border-bottom:1px solid var(--line); font-size:12.5px; cursor:default; }
+  .notif-clear-all{ font-weight:600; font-size:11px; color:var(--gold-deep); cursor:pointer; text-decoration:underline; text-transform:none; letter-spacing:0; }
+  .notif-clear-all:hover{ color:var(--ink); }
+  .notif-item{ padding:12px 40px 12px 16px; border-bottom:1px solid var(--line); font-size:12.5px; cursor:default; position:relative; }
   .notif-item:last-child{ border-bottom:none; }
   .notif-item.clickable{ cursor:pointer; }
   .notif-item.clickable:hover{ background:var(--cream); }
   .notif-item-title{ font-weight:700; margin-bottom:2px; color:var(--ink); }
   .notif-item-body{ color:var(--muted); font-size:11.5px; }
   .notif-item-time{ color:#B9B3A5; font-size:10px; margin-top:4px; }
+  .notif-item-clear{
+    position:absolute; top:10px; right:12px; font-size:15px; color:#B9B3A5; cursor:pointer; line-height:1; padding:2px 4px;
+  }
+  .notif-item-clear:hover{ color:var(--st-rejected); }
   .notif-empty{ padding:24px 16px; text-align:center; color:var(--muted); font-size:12.5px; }
   .role-pill{
     display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
@@ -491,7 +498,10 @@
         <span class="notif-badge hidden" id="notif-badge">0</span>
       </button>
       <div class="notif-dropdown hidden" id="notif-dropdown">
-        <div class="notif-dropdown-head">Notifications</div>
+        <div class="notif-dropdown-head">
+          <span>Notifications</span>
+          <span class="notif-clear-all" id="notif-clear-all" data-always-enabled="true">Clear all</span>
+        </div>
         <div id="notif-list"></div>
       </div>
     </div>
@@ -1703,21 +1713,33 @@ function addNotification(title, body, taskId){
   renderNotifBell();
 }
 
-function unreadNotifCount(){
-  return notificationHistory.filter(n => !n.read).length;
-}
-
 function renderNotifBell(){
   const badge = document.getElementById("notif-badge");
   if(!badge) return;
-  const count = unreadNotifCount();
+  const count = notificationHistory.length;
   badge.textContent = count > 9 ? "9+" : String(count);
   badge.classList.toggle("hidden", count === 0);
+}
+
+function clearNotification(id){
+  notificationHistory = notificationHistory.filter(n => n.id !== id);
+  saveNotificationHistory();
+  renderNotifBell();
+  renderNotifDropdown();
+}
+
+function clearAllNotifications(){
+  notificationHistory = [];
+  saveNotificationHistory();
+  renderNotifBell();
+  renderNotifDropdown();
 }
 
 function renderNotifDropdown(){
   const list = document.getElementById("notif-list");
   if(!list) return;
+  const clearAllBtn = document.getElementById("notif-clear-all");
+  if(clearAllBtn) clearAllBtn.classList.toggle("hidden", notificationHistory.length === 0);
   if(notificationHistory.length === 0){
     list.innerHTML = '<div class="notif-empty">No notifications yet.</div>';
     return;
@@ -1730,10 +1752,15 @@ function renderNotifDropdown(){
     const timeStr = when.toLocaleDateString(undefined,{month:"short",day:"numeric"}) + " · " +
       when.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
     item.innerHTML = `
+      <span class="notif-item-clear" title="Clear this notification" data-always-enabled="true">&times;</span>
       <div class="notif-item-title">${n.title}</div>
       <div class="notif-item-body">${n.body}</div>
       <div class="notif-item-time">${timeStr}</div>
     `;
+    item.querySelector(".notif-item-clear").addEventListener("click", (e) => {
+      e.stopPropagation();
+      clearNotification(n.id);
+    });
     if(n.taskId){
       item.addEventListener("click", () => {
         toggleNotifDropdown(false);
@@ -1750,12 +1777,9 @@ function toggleNotifDropdown(forceState){
   if(!dropdown) return;
   const show = forceState !== undefined ? forceState : dropdown.classList.contains("hidden");
   dropdown.classList.toggle("hidden", !show);
-  if(show){
-    renderNotifDropdown();
-    let changed = false;
-    notificationHistory.forEach(n => { if(!n.read){ n.read = true; changed = true; } });
-    if(changed){ saveNotificationHistory(); renderNotifBell(); }
-  }
+  // Opening the panel no longer clears anything — notifications stay
+  // (and the badge count stays put) until explicitly cleared.
+  if(show) renderNotifDropdown();
 }
 
 function showToast(title, body){
@@ -2141,6 +2165,10 @@ function bindEvents(){
   document.getElementById("notif-bell-btn").addEventListener("click", (e) => {
     e.stopPropagation();
     toggleNotifDropdown();
+  });
+  document.getElementById("notif-clear-all").addEventListener("click", (e) => {
+    e.stopPropagation();
+    clearAllNotifications();
   });
   document.addEventListener("click", (e) => {
     const wrap = document.getElementById("notif-bell-wrap");
