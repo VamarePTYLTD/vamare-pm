@@ -1138,11 +1138,32 @@ async function initAuth(){
     return;
   }
 
-  // Attached before the session check below, so we can't miss a PASSWORD_RECOVERY
-  // event firing the instant Supabase parses a reset link in the URL.
+  // Detect a password-recovery link directly from the URL itself, rather than
+  // relying only on the PASSWORD_RECOVERY event's timing relative to getSession()
+  // — Supabase's own session detection can resolve before or after that event
+  // fires depending on conditions, so the URL is the one signal we can trust.
+  const cameFromRecoveryLink =
+    window.location.hash.includes("type=recovery") || window.location.search.includes("type=recovery");
+
+  // Still attached, as a backup path and to catch sign-in/sign-out normally.
   attachAuthStateListener();
 
   const { data: { session } } = await sb.auth.getSession();
+
+  if(cameFromRecoveryLink){
+    // Clean the token out of the address bar — it's sensitive and no longer needed.
+    history.replaceState(null, "", window.location.pathname);
+    document.getElementById("auth-loading").classList.add("hidden");
+    document.getElementById("auth-form-wrap").classList.remove("hidden");
+    if(session){
+      showAuthView("reset");
+    } else {
+      showAuthView("login");
+      showAuthError("That reset link has expired or was already used — please request a new one.");
+    }
+    return;
+  }
+
   if(session){
     // Genuinely logged in — go straight to the app, the login form is never shown.
     await onLoggedIn(session.user);
