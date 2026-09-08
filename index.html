@@ -1571,7 +1571,7 @@ function openTaskModal(taskId){
   document.getElementById("tm-title").value = task ? task.title : "";
   document.getElementById("tm-due-date").value = task ? (task.dueDate || "") : "";
   document.getElementById("tm-due-time").value = task ? (task.dueTime || "") : "";
-  document.getElementById("tm-reminder").value = task ? (task.reminder || "none") : "none";
+  document.getElementById("tm-reminder").value = task ? (task.reminder || "none") : "at_due";
   document.getElementById("tm-priority").value = task ? (task.priority || "none") : "none";
   document.getElementById("tm-workstream").value = task ? task.workstream : "Design";
   document.getElementById("tm-assigned").value = task ? (task.assignedTo || "") : "";
@@ -1616,6 +1616,7 @@ const saveTaskFromModal = guardEdit(function(){
     state.board.push({ id, ...fields, reminderFired:false });
   }
   saveState(); renderBoard(); renderDashboard();
+  checkReminders(); // don't make them wait up to 20s if the due time has already passed
   closeTaskModal();
 });
 
