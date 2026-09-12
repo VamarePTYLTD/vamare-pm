@@ -350,6 +350,12 @@
   .status-draft{ background:var(--st-none); }
   .status-archived{ background:var(--st-rejected); }
   .lineitem-empty{ padding:16px 0; color:var(--muted); font-size:12.5px; }
+  .invite-row{
+    display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); font-size:12.5px;
+  }
+  .invite-row:last-child{ border-bottom:none; }
+  .invite-row .inv-email{ flex:1; font-weight:600; }
+  .invite-row .inv-role{ color:var(--muted); text-transform:capitalize; width:70px; }
   .add-product-trigger{
     display:block; width:100%; padding:10px; text-align:center;
     background:none; border:1.5px dashed var(--line); color:var(--muted);
@@ -954,17 +960,26 @@
     <div class="page-head">
       <h1 class="page-title">Team</h1>
     </div>
+    <div class="panel" id="invite-panel">
+      <h3>Invite a team member</h3>
+      <div class="panel-sub" style="margin-bottom:10px;">
+        Share this app's link with them and have them sign up with the email below — they'll be set to this role automatically the moment they join, instead of defaulting to viewer.
+      </div>
+      <div class="toolbar" style="margin-bottom:0;">
+        <input type="email" id="new-invite-email" placeholder="their@email.com" style="flex:2;min-width:200px;"/>
+        <select id="new-invite-role">
+          <option value="viewer">Viewer</option>
+          <option value="editor">Editor</option>
+        </select>
+        <button class="btn btn-gold" id="add-invite-btn">Add invite</button>
+      </div>
+      <div id="pending-invites-list"></div>
+    </div>
     <div class="panel" style="padding:0;overflow-x:auto;">
       <table id="team-table">
-        <thead><tr><th style="width:56px;"></th><th>Name</th><th style="width:160px;">Role</th></tr></thead>
+        <thead><tr><th style="width:56px;"></th><th>Name</th><th style="width:160px;">Role</th><th style="width:40px;"></th></tr></thead>
         <tbody id="team-tbody"></tbody>
       </table>
-    </div>
-    <div class="panel">
-      <h3>How to add someone</h3>
-      <div class="panel-sub" style="margin-bottom:0;">
-        Share this file with them and have them open it and sign up with their own email — they'll appear in this list automatically as a "viewer." Come back here to promote them to "editor" once you want them making changes.
-      </div>
     </div>
   </section>
 
@@ -1128,7 +1143,7 @@ let state = seedStateSafe();
 
 function seedStateSafe(){
   try{ return seedState(); }
-  catch(e){ console.error("Seeding default state failed", e); return {board:[],timelineTasks:[],phases:[],vetting:{},manufacturers:[],categories:[],lineItems:[],budget:[],notes:[],nextIds:{board:1,manufacturer:1,budget:1,note:1,timeline:1,phase:1,category:1,lineItem:1}}; }
+  catch(e){ console.error("Seeding default state failed", e); return {board:[],timelineTasks:[],phases:[],vetting:{},manufacturers:[],categories:[],lineItems:[],budget:[],notes:[],pendingInvites:[],nextIds:{board:1,manufacturer:1,budget:1,note:1,timeline:1,phase:1,category:1,lineItem:1,invite:1}}; }
 }
 
 function seedState(){
@@ -1142,7 +1157,8 @@ function seedState(){
     lineItems: SEED_LINE_ITEMS.map(p => ({...p})),
     budget: SEED_BUDGET.map(b => ({...b})),
     notes: [],
-    nextIds: {board:100, manufacturer:100, budget:100, note:1, timeline:100, phase:100, category:100, lineItem:100},
+    pendingInvites: [],
+    nextIds: {board:100, manufacturer:100, budget:100, note:1, timeline:100, phase:100, category:100, lineItem:100, invite:100},
   };
 }
 
@@ -1177,6 +1193,7 @@ function mergeWithSeed(saved){
   }
   if(Array.isArray(saved.categories)) seed.categories = saved.categories;
   if(Array.isArray(saved.lineItems)) seed.lineItems = saved.lineItems;
+  if(Array.isArray(saved.pendingInvites)) seed.pendingInvites = saved.pendingInvites;
   if(Array.isArray(saved.budget) && saved.budget.length) seed.budget = saved.budget;
   if(Array.isArray(saved.notes)) seed.notes = saved.notes;
   if(saved.nextIds) seed.nextIds = {...seed.nextIds, ...saved.nextIds};
@@ -1217,6 +1234,15 @@ function saveState(){
 function guardEdit(fn){
   return function(...args){
     if(currentRole === "viewer") return;
+    return fn.apply(this, args);
+  };
+}
+
+// Stricter than guardEdit — for actions (invite/remove teammates) that only
+// the owner should ever be able to trigger, not editors.
+function guardOwnerOnly(fn){
+  return function(...args){
+    if(currentRole !== "owner") return;
     return fn.apply(this, args);
   };
 }
@@ -1435,6 +1461,26 @@ async function fetchTeam(){
   const { data, error } = await sb.from("profiles").select("id,email,role,display_name,avatar_data").order("created_at", { ascending:true });
   if(error){ console.error("Could not load team list", error); teamList = []; return; }
   teamList = data;
+
+  // If someone we invited has now actually joined (and we're the owner),
+  // apply the role we promised them and clear the invite — no manual step needed.
+  if(currentRole === "owner" && state.pendingInvites && state.pendingInvites.length){
+    let changed = false;
+    for(const person of teamList){
+      const invite = state.pendingInvites.find(inv => inv.email.toLowerCase() === person.email.toLowerCase());
+      if(invite && person.role !== invite.role && person.role !== "owner"){
+        try{
+          const { error: updateErr } = await sb.from("profiles").update({ role: invite.role }).eq("id", person.id);
+          if(!updateErr){
+            person.role = invite.role;
+            state.pendingInvites = state.pendingInvites.filter(i => i.id !== invite.id);
+            changed = true;
+          }
+        }catch(e){ console.error("Could not apply invited role", e); }
+      }
+    }
+    if(changed) saveState();
+  }
 }
 
 function subscribeRealtime(){
@@ -2778,6 +2824,8 @@ function bindEvents(){
   document.getElementById("mfg-group-filter").addEventListener("change", renderManufacturers);
   document.getElementById("mfg-status-filter").addEventListener("change", renderManufacturers);
   document.getElementById("add-mfg-btn").addEventListener("click", addManufacturer);
+  document.getElementById("add-invite-btn").addEventListener("click", addInvite);
+  document.getElementById("new-invite-email").addEventListener("keydown", (e) => { if(e.key==="Enter") addInvite(); });
   document.getElementById("add-category-btn").addEventListener("click", addCategory);
   document.getElementById("new-category-name").addEventListener("keydown", (e) => { if(e.key==="Enter") addCategory(); });
   document.getElementById("add-note-btn").addEventListener("click", addNote);
@@ -2860,6 +2908,10 @@ function bindEvents(){
 }
 
 function renderTeam(){
+  const invitePanel = document.getElementById("invite-panel");
+  if(invitePanel) invitePanel.classList.toggle("hidden", currentRole !== "owner");
+  renderPendingInvites();
+
   const tbody = document.getElementById("team-tbody");
   if(!tbody) return;
   tbody.innerHTML = "";
@@ -2867,7 +2919,7 @@ function renderTeam(){
     const tr = document.createElement("tr");
     const isYou = currentUser && person.id === currentUser.id;
     const displayName = person.display_name || person.email;
-    tr.innerHTML = `<td></td><td>${displayName}${isYou ? '<span class="you-tag">YOU</span>' : ''}<div style="font-size:11px;color:var(--muted);">${person.email}</div></td><td></td>`;
+    tr.innerHTML = `<td></td><td>${displayName}${isYou ? '<span class="you-tag">YOU</span>' : ''}<div style="font-size:11px;color:var(--muted);">${person.email}</div></td><td></td><td></td>`;
 
     const avatarTd = tr.children[0];
     const avatarEl = document.createElement("div");
@@ -2904,9 +2956,80 @@ function renderTeam(){
       }));
       roleTd.appendChild(select);
     }
+
+    // Remove — owner only, and never on your own row (self-protection).
+    const removeTd = tr.children[3];
+    if(currentRole === "owner" && person.role !== "owner" && !isYou){
+      const del = document.createElement("span");
+      del.className = "btn-del";
+      del.textContent = "×";
+      del.title = "Remove from team";
+      del.addEventListener("click", guardOwnerOnly(() => removeTeamMember(person)));
+      removeTd.appendChild(del);
+    }
+
     tbody.appendChild(tr);
   });
 }
+
+function renderPendingInvites(){
+  const list = document.getElementById("pending-invites-list");
+  if(!list) return;
+  if(!state.pendingInvites || state.pendingInvites.length === 0){
+    list.innerHTML = "";
+    return;
+  }
+  list.innerHTML = "";
+  state.pendingInvites.forEach(inv => {
+    const row = document.createElement("div");
+    row.className = "invite-row";
+    row.innerHTML = `
+      <span class="inv-email">${inv.email}</span>
+      <span class="inv-role">${inv.role} (pending)</span>
+    `;
+    const cancel = document.createElement("span");
+    cancel.className = "btn-del";
+    cancel.textContent = "×";
+    cancel.title = "Cancel this invite";
+    cancel.addEventListener("click", guardOwnerOnly(() => {
+      state.pendingInvites = state.pendingInvites.filter(i => i.id !== inv.id);
+      saveState(); renderPendingInvites();
+    }));
+    row.appendChild(cancel);
+    list.appendChild(row);
+  });
+}
+
+const addInvite = guardOwnerOnly(function(){
+  const emailInput = document.getElementById("new-invite-email");
+  const email = emailInput.value.trim().toLowerCase();
+  if(!email) return;
+  if(teamList.some(p => p.email.toLowerCase() === email)){
+    alert("That person is already on the team.");
+    return;
+  }
+  const role = document.getElementById("new-invite-role").value;
+  const id = "inv" + (state.nextIds.invite++);
+  state.pendingInvites = state.pendingInvites || [];
+  // Adding again with a new role replaces the old pending entry for that email.
+  state.pendingInvites = state.pendingInvites.filter(i => i.email.toLowerCase() !== email);
+  state.pendingInvites.push({id, email, role});
+  emailInput.value = "";
+  saveState(); renderPendingInvites();
+});
+
+const removeTeamMember = guardOwnerOnly(async function(person){
+  if(!confirm(`Remove ${person.display_name || person.email} from the team? They'll lose access immediately if they're signed in, and would need a fresh invite to come back.`)) return;
+  try{
+    const { error } = await sb.from("profiles").delete().eq("id", person.id);
+    if(error) throw error;
+    teamList = teamList.filter(p => p.id !== person.id);
+    renderTeam();
+  }catch(err){
+    alert("Couldn't remove that person: " + (err.message || "unknown error"));
+  }
+});
+
 
 /* ============================================================
    PROFILE (self-service — allowed for every role, including viewers)
