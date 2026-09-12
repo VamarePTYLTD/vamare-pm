@@ -590,9 +590,7 @@
   <!-- DASHBOARD -->
   <section id="tab-dashboard" class="tab">
     <div class="page-head">
-      <div class="eyebrow">Overview</div>
       <h1 class="page-title">Vamaré Project Dashboard</h1>
-      <div class="page-sub">Everything for the Phase 1 jewelry capsule in one place — tasks, timeline, manufacturers, budget, and decisions. Changes save automatically as you work.</div>
     </div>
     <div class="stat-row">
       <div class="stat-card"><div class="num" id="d-tasks-open">–</div><div class="label">Open tasks</div></div>
@@ -621,9 +619,7 @@
   <!-- BOARD -->
   <section id="tab-board" class="tab hidden">
     <div class="page-head">
-      <div class="eyebrow">Section 1</div>
       <h1 class="page-title">Task Board</h1>
-      <div class="page-sub">Drag cards between columns, or add your own tasks as things come up — this isn't fixed to the original plan.</div>
     </div>
     <button id="add-task-trigger" class="add-task-trigger" type="button">+ Add task</button>
     <div class="board" id="board"></div>
@@ -632,9 +628,7 @@
   <!-- TIMELINE -->
   <section id="tab-timeline" class="tab hidden">
     <div class="page-head">
-      <div class="eyebrow">Section 2</div>
       <h1 class="page-title">Timeline</h1>
-      <div class="page-sub">The three-phase path from the GTM deck: jewelry capsule first, then scale, then the leather launch.</div>
     </div>
     <div class="panel" id="add-phase-form">
       <h3>Add a new phase</h3>
@@ -655,9 +649,7 @@
   <!-- MANUFACTURERS -->
   <section id="tab-manufacturers" class="tab hidden">
     <div class="page-head">
-      <div class="eyebrow">Section 3</div>
       <h1 class="page-title">Manufacturer Outreach</h1>
-      <div class="page-sub">30 China manufacturer leads across four specialties, plus room to add more as you find them. Leads to vet, not pre-vetted partners.</div>
     </div>
     <div class="panel">
       <h3>Add a manufacturer</h3>
@@ -693,9 +685,7 @@
   <!-- LINE ITEMS -->
   <section id="tab-lineitems" class="tab hidden">
     <div class="page-head">
-      <div class="eyebrow">Section 5</div>
       <h1 class="page-title">Line Items</h1>
-      <div class="page-sub">Your product catalog — organized into categories, each holding the individual pieces (and their variants) within it.</div>
     </div>
     <div class="panel">
       <h3>Add a category</h3>
@@ -810,9 +800,7 @@
   <!-- BUDGET -->
   <section id="tab-budget" class="tab hidden">
     <div class="page-head">
-      <div class="eyebrow">Section 4</div>
       <h1 class="page-title">Budget</h1>
-      <div class="page-sub">Planning ranges from the GTM deck, in AUD — track what's actually committed as you place orders.</div>
     </div>
     <div class="panel" style="padding:0;overflow-x:auto;">
       <table id="budget-table">
@@ -832,22 +820,12 @@
         <div class="budget-total" id="budget-total-planned">–</div>
       </div>
     </div>
-    <div class="panel">
-      <h3>Add a line item</h3>
-      <div class="toolbar" style="margin-bottom:0;">
-        <input type="text" id="new-budget-item" placeholder="Line item" style="flex:2;min-width:180px;"/>
-        <input type="text" id="new-budget-planned" placeholder="Planned e.g. $2,000 – $4,000" style="flex:1;min-width:160px;"/>
-        <button class="btn btn-gold" id="add-budget-btn">Add</button>
-      </div>
-    </div>
   </section>
 
   <!-- NOTES -->
   <section id="tab-notes" class="tab hidden">
     <div class="page-head">
-      <div class="eyebrow">Section 5</div>
       <h1 class="page-title">Decisions &amp; Notes</h1>
-      <div class="page-sub">A running log — pivots, factory calls, anything worth remembering later.</div>
     </div>
     <div class="panel">
       <div class="note-add">
@@ -942,9 +920,7 @@
   <!-- PROFILE -->
   <section id="tab-profile" class="tab hidden">
     <div class="page-head">
-      <div class="eyebrow">Section 6</div>
       <h1 class="page-title">My Profile</h1>
-      <div class="page-sub">Your name and photo, as they'll appear in the Team tab to everyone else. This is yours to edit regardless of your access level.</div>
     </div>
     <div class="panel">
       <div class="profile-row">
@@ -976,9 +952,7 @@
   <!-- TEAM -->
   <section id="tab-team" class="tab hidden">
     <div class="page-head">
-      <div class="eyebrow">Section 6</div>
       <h1 class="page-title">Team</h1>
-      <div class="page-sub">Everyone who has signed in. Only the owner can change someone's role — real enforcement happens in the database, this is just the control panel for it.</div>
     </div>
     <div class="panel" style="padding:0;overflow-x:auto;">
       <table id="team-table">
@@ -2756,17 +2730,6 @@ function renderBudgetTotals(){
     state.budget.length ? "See line items above" : "–";
 }
 
-const addBudgetLine = guardEdit(function(){
-  const item = document.getElementById("new-budget-item").value.trim();
-  if(!item) return;
-  const planned = document.getElementById("new-budget-planned").value.trim() || "—";
-  const id = "bg" + (state.nextIds.budget++);
-  state.budget.push({id, item, planned, committed:0});
-  document.getElementById("new-budget-item").value = "";
-  document.getElementById("new-budget-planned").value = "";
-  saveState(); renderBudget(); renderDashboard();
-});
-
 /* ============================================================
    NOTES
 ============================================================ */
@@ -2817,7 +2780,6 @@ function bindEvents(){
   document.getElementById("add-mfg-btn").addEventListener("click", addManufacturer);
   document.getElementById("add-category-btn").addEventListener("click", addCategory);
   document.getElementById("new-category-name").addEventListener("keydown", (e) => { if(e.key==="Enter") addCategory(); });
-  document.getElementById("add-budget-btn").addEventListener("click", addBudgetLine);
   document.getElementById("add-note-btn").addEventListener("click", addNote);
 
   document.getElementById("export-btn").addEventListener("click", exportData);
@@ -2831,9 +2793,6 @@ function bindEvents(){
   // Enter-to-submit on the small text inputs, for convenience
   ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url"].forEach(id => {
     document.getElementById(id).addEventListener("keydown", (e) => { if(e.key==="Enter") addManufacturer(); });
-  });
-  ["new-budget-item","new-budget-planned"].forEach(id => {
-    document.getElementById(id).addEventListener("keydown", (e) => { if(e.key==="Enter") addBudgetLine(); });
   });
 
   // Task modal
