@@ -160,10 +160,22 @@
 
   /* ---------- Timeline ---------- */
   .phase{margin-bottom:22px;}
-  .phase-head{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;flex-wrap:wrap;}
+  .phase-head{display:flex;align-items:center;gap:10px;margin-bottom:4px;flex-wrap:wrap;}
   .phase-badge{font-family:Cambria,serif;font-size:13px;background:var(--charcoal);color:var(--gold);padding:3px 10px;}
   .phase-title{font-weight:700;font-size:14.5px;}
-  .phase-weeks{font-size:11.5px;color:var(--muted);}
+  .phase-weeks{font-size:11.5px;color:var(--muted);margin-left:auto;}
+  .phase-badge-input{
+    font-family:Cambria,serif;font-size:13px;background:var(--charcoal);color:var(--gold);
+    padding:4px 10px;border:1px solid transparent;width:130px;flex:none;
+  }
+  .phase-badge-input:hover{ border-color:var(--gold); }
+  .phase-badge-input:focus{ outline:none; border-color:var(--gold); background:var(--charcoal-2); }
+  .phase-title-input{
+    font-weight:700;font-size:14.5px;border:1px solid transparent;padding:4px 6px;flex:1;min-width:140px;
+    font-family:inherit;background:transparent;
+  }
+  .phase-title-input:hover{ border-color:var(--line); }
+  .phase-title-input:focus{ outline:none; border-color:var(--gold); background:#fff; }
   .progress-wrap{background:var(--cream-2);height:6px;width:100%;margin:8px 0 14px;}
   .progress-bar{background:var(--gold-deep);height:100%;transition:width .3s ease;}
   .task{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);}
@@ -516,6 +528,7 @@
     </div>
     <div class="stat-row">
       <div class="stat-card"><div class="num" id="d-tasks-open">–</div><div class="label">Open tasks</div></div>
+      <div class="stat-card"><div class="num" id="d-tasks-doing">–</div><div class="label">Tasks in progress</div></div>
       <div class="stat-card"><div class="num" id="d-tasks-done">–</div><div class="label">Tasks done</div></div>
       <div class="stat-card"><div class="num" id="d-mfg-contacted">–</div><div class="label">Manufacturers contacted / 30</div></div>
       <div class="stat-card"><div class="num" id="d-budget-spent">–</div><div class="label">Budget committed (AUD)</div></div>
@@ -943,18 +956,19 @@ let state = seedStateSafe();
 
 function seedStateSafe(){
   try{ return seedState(); }
-  catch(e){ console.error("Seeding default state failed", e); return {board:[],timelineTasks:[],vetting:{},manufacturers:[],budget:[],notes:[],nextIds:{board:1,manufacturer:1,budget:1,note:1,timeline:1}}; }
+  catch(e){ console.error("Seeding default state failed", e); return {board:[],timelineTasks:[],phases:[],vetting:{},manufacturers:[],budget:[],notes:[],nextIds:{board:1,manufacturer:1,budget:1,note:1,timeline:1,phase:1}}; }
 }
 
 function seedState(){
   return {
     board: SEED_BOARD.map(t => ({...t})),
+    phases: SEED_PHASES.map(p => ({...p})),
     timelineTasks: SEED_TIMELINE_TASKS.map(t => ({...t, done:false})),
     vetting: Object.fromEntries(SEED_VETTING.map(v => [v.id, false])),
     manufacturers: SEED_MANUFACTURERS.map(m => ({...m, status:"Not Contacted", notes:""})),
     budget: SEED_BUDGET.map(b => ({...b})),
     notes: [],
-    nextIds: {board:100, manufacturer:100, budget:100, note:1, timeline:100},
+    nextIds: {board:100, manufacturer:100, budget:100, note:1, timeline:100, phase:100},
   };
 }
 
@@ -963,6 +977,11 @@ function mergeWithSeed(saved){
   if(!saved || Object.keys(saved).length === 0) return seed;
 
   if(Array.isArray(saved.board) && saved.board.length) seed.board = saved.board;
+
+  if(Array.isArray(saved.phases) && saved.phases.length){
+    // Fully user-owned once edited — replace wholesale, same as board/budget/notes.
+    seed.phases = saved.phases;
+  }
 
   if(Array.isArray(saved.timelineTasks) && saved.timelineTasks.length){
     // Fully user-owned data once edited — replace wholesale, same as board/budget/notes.
@@ -1421,9 +1440,11 @@ function switchTab(id){
    DASHBOARD
 ============================================================ */
 function renderDashboard(){
-  const open = state.board.filter(t => t.column !== "done").length;
+  const open = state.board.filter(t => t.column === "todo").length;
+  const doing = state.board.filter(t => t.column === "doing").length;
   const done = state.board.filter(t => t.column === "done").length;
   document.getElementById("d-tasks-open").textContent = open;
+  document.getElementById("d-tasks-doing").textContent = doing;
   document.getElementById("d-tasks-done").textContent = done;
 
   const contacted = state.manufacturers.filter(m => m.status !== "Not Contacted").length;
@@ -1441,7 +1462,7 @@ function renderDashboard(){
   const nextEl = document.getElementById("d-next");
   const nextCard = state.board.find(t => t.column !== "done");
   const nextTask = state.timelineTasks.find(t => !t.done);
-  const nextMilestone = nextTask ? {phase: SEED_PHASES.find(p => p.id === nextTask.phaseId), t: nextTask} : null;
+  const nextMilestone = nextTask ? {phase: state.phases.find(p => p.id === nextTask.phaseId), t: nextTask} : null;
   let html = "";
   if(nextCard) html += `<div style="margin-bottom:8px;"><b>Task:</b> ${nextCard.title} <span style="color:var(--muted);font-size:11.5px;">(${nextCard.workstream})</span></div>`;
   if(nextMilestone) html += `<div><b>Milestone:</b> ${nextMilestone.phase ? nextMilestone.phase.title : ""} — ${nextMilestone.t.label}</div>`;
@@ -1825,7 +1846,7 @@ function playBellSound(){
 function renderTimeline(){
   const wrap = document.getElementById("timeline-phases");
   wrap.innerHTML = "";
-  SEED_PHASES.forEach(phase => {
+  state.phases.forEach(phase => {
     const tasks = state.timelineTasks.filter(t => t.phaseId === phase.id);
     const total = tasks.length;
     const done = tasks.filter(t => t.done).length;
@@ -1833,14 +1854,56 @@ function renderTimeline(){
 
     const div = document.createElement("div");
     div.className = "panel phase";
-    div.innerHTML = `
-      <div class="phase-head">
-        <span class="phase-badge">${phase.badge}</span>
-        <span class="phase-title">${phase.title}</span>
-        <span class="phase-weeks">${done}/${total} complete</span>
-      </div>
-      <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%"></div></div>
-    `;
+
+    const head = document.createElement("div");
+    head.className = "phase-head";
+
+    const badgeInput = document.createElement("input");
+    badgeInput.type = "text";
+    badgeInput.className = "phase-badge-input";
+    badgeInput.value = phase.badge;
+    badgeInput.title = "e.g. Months 0–6";
+    badgeInput.addEventListener("change", guardEdit((e) => {
+      phase.badge = e.target.value.trim() || phase.badge;
+      badgeInput.value = phase.badge;
+      saveState();
+    }));
+
+    const titleInput = document.createElement("input");
+    titleInput.type = "text";
+    titleInput.className = "phase-title-input";
+    titleInput.value = phase.title;
+    titleInput.addEventListener("change", guardEdit((e) => {
+      phase.title = e.target.value.trim() || phase.title;
+      titleInput.value = phase.title;
+      saveState();
+    }));
+
+    const weeksSpan = document.createElement("span");
+    weeksSpan.className = "phase-weeks";
+    weeksSpan.textContent = `${done}/${total} complete`;
+
+    const delPhase = document.createElement("span");
+    delPhase.className = "btn-del";
+    delPhase.textContent = "×";
+    delPhase.title = "Delete this whole phase and its milestones";
+    delPhase.addEventListener("click", guardEdit(() => {
+      if(!confirm(`Delete "${phase.title}" and all ${total} of its milestones? This can't be undone.`)) return;
+      state.phases = state.phases.filter(p => p.id !== phase.id);
+      state.timelineTasks = state.timelineTasks.filter(t => t.phaseId !== phase.id);
+      saveState(); renderTimeline(); renderDashboard();
+    }));
+
+    head.appendChild(badgeInput);
+    head.appendChild(titleInput);
+    head.appendChild(weeksSpan);
+    head.appendChild(delPhase);
+    div.appendChild(head);
+    const progressWrap = document.createElement("div");
+    progressWrap.className = "progress-wrap";
+    progressWrap.innerHTML = `<div class="progress-bar" style="width:${pct}%"></div>`;
+    div.appendChild(progressWrap);
+
     tasks.forEach(t => {
       const row = document.createElement("div");
       row.className = "task" + (t.done ? " done" : "");
@@ -1905,6 +1968,33 @@ function renderTimeline(){
 
     wrap.appendChild(div);
   });
+
+  // Add-new-phase form, once, after all phase panels
+  let addPhaseForm = document.getElementById("add-phase-form");
+  if(!addPhaseForm){
+    addPhaseForm = document.createElement("div");
+    addPhaseForm.id = "add-phase-form";
+    addPhaseForm.className = "panel";
+    addPhaseForm.innerHTML = `
+      <h3>Add a new phase</h3>
+      <div class="toolbar" style="margin-bottom:0;">
+        <input type="text" id="new-phase-badge" placeholder="e.g. Months 18–24" style="flex:1;min-width:160px;"/>
+        <input type="text" id="new-phase-title" placeholder="Phase title" style="flex:2;min-width:180px;"/>
+        <button class="btn btn-gold" id="add-phase-btn">Add phase</button>
+      </div>
+    `;
+    wrap.parentElement.insertBefore(addPhaseForm, wrap.nextSibling);
+    document.getElementById("add-phase-btn").addEventListener("click", guardEdit(() => {
+      const badge = document.getElementById("new-phase-badge").value.trim();
+      const title = document.getElementById("new-phase-title").value.trim();
+      if(!title) return;
+      const id = "ph" + (state.nextIds.phase++);
+      state.phases.push({id, badge: badge || "New phase", title});
+      document.getElementById("new-phase-badge").value = "";
+      document.getElementById("new-phase-title").value = "";
+      saveState(); renderTimeline(); renderDashboard();
+    }));
+  }
 
   const vList = document.getElementById("vetting-list");
   vList.innerHTML = "";
