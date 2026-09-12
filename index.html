@@ -364,6 +364,16 @@
   .variant-row .v-sku{ flex:1; color:var(--muted); }
   .variant-row .v-price{ flex:1; color:var(--gold-deep); }
   .variant-row .v-inv{ flex:1; color:var(--muted); }
+  .pm-photos-gallery{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
+  .pm-photo-thumb{ position:relative; width:64px; height:64px; }
+  .pm-photo-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+  .pm-photo-thumb .pm-photo-remove{
+    position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%;
+    background:var(--st-rejected); color:#fff; font-size:12px; line-height:18px; text-align:center; cursor:pointer;
+  }
+  .pm-blueprint-status{ font-size:12.5px; color:var(--muted); margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+  .pm-blueprint-status a{ color:var(--gold-deep); text-decoration:underline; }
+  .lineitem-row-del{ width:30px; text-align:right; }
 
   .role-pill{
     display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
@@ -395,12 +405,12 @@
   .profile-saved-tag{ font-size:11px; color:var(--st-approved); margin-left:8px; opacity:0; transition:opacity .3s; }
   .profile-saved-tag.show{ opacity:1; }
 
-  /* ---------- Task modal ---------- */
-  #task-modal-overlay{
+  /* ---------- Task modal (shared with the product modal below) ---------- */
+  #task-modal-overlay, #product-modal-overlay{
     position:fixed; inset:0; background:rgba(26,26,24,0.65);
     display:flex; align-items:center; justify-content:center; z-index:1200; padding:20px;
   }
-  #task-modal-overlay.hidden{ display:none; }
+  #task-modal-overlay.hidden, #product-modal-overlay.hidden{ display:none; }
   .task-modal{ background:#fff; width:100%; max-width:520px; max-height:88vh; overflow-y:auto; }
   .task-modal-head{
     display:flex; align-items:center; justify-content:space-between;
@@ -718,15 +728,27 @@
             <select id="pm-category"></select>
           </div>
         </div>
-        <div class="tm-field">
-          <label>Photo</label>
-          <div style="display:flex;align-items:center;gap:14px;">
-            <div class="avatar" id="pm-photo-preview" style="width:64px;height:64px;border-radius:8px;font-size:22px;"></div>
-            <div>
-              <input type="file" id="pm-photo-input" accept="image/*" class="hidden" />
-              <button class="btn btn-ghost" id="pm-photo-btn" type="button" style="font-size:11px;padding:6px 10px;">Upload photo</button>
-            </div>
+        <div class="tm-row">
+          <div class="tm-field">
+            <label>Material</label>
+            <input type="text" id="pm-material" placeholder="e.g. 10k vermeil gold, 925 sterling base" />
           </div>
+          <div class="tm-field">
+            <label>Dimensions</label>
+            <input type="text" id="pm-dimensions" placeholder="e.g. 18mm face, 2mm band width" />
+          </div>
+        </div>
+        <div class="tm-field">
+          <label>Photos</label>
+          <div id="pm-photos-gallery" class="pm-photos-gallery"></div>
+          <input type="file" id="pm-photo-input" accept="image/*" class="hidden" />
+          <button class="btn btn-ghost" id="pm-photo-btn" type="button" style="font-size:11px;padding:6px 10px;">Add photo</button>
+        </div>
+        <div class="tm-field">
+          <label>Blueprint / technical drawing</label>
+          <div id="pm-blueprint-status" class="pm-blueprint-status">No blueprint attached</div>
+          <input type="file" id="pm-blueprint-input" accept="image/*,application/pdf" class="hidden" />
+          <button class="btn btn-ghost" id="pm-blueprint-btn" type="button" style="font-size:11px;padding:6px 10px;">Upload blueprint</button>
         </div>
         <div class="tm-field">
           <label>Description</label>
@@ -2325,8 +2347,9 @@ function renderLineItems(){
       items.forEach(p => {
         const tr = document.createElement("tr");
         tr.className = "lineitem-row";
-        const photoCell = p.photoData
-          ? `<img class="lineitem-photo" src="${p.photoData}" alt="" />`
+        const firstPhoto = (p.photos && p.photos[0]) || p.photoData || null;
+        const photoCell = firstPhoto
+          ? `<img class="lineitem-photo" src="${firstPhoto}" alt="" />`
           : `<div class="lineitem-photo">No photo</div>`;
         const variantCount = (p.variants || []).length;
         tr.innerHTML = `
@@ -2334,8 +2357,20 @@ function renderLineItems(){
           <td><div class="lineitem-name">${p.name}</div><div class="lineitem-sku">${p.sku || "No SKU"}</div></td>
           <td>${variantCount ? variantCount + " variant" + (variantCount===1?"":"s") : (p.price != null ? "$" + Number(p.price).toFixed(2) : "—")}</td>
           <td>${statusPillHtml(p.status)}</td>
+          <td class="lineitem-row-del"></td>
         `;
         tr.addEventListener("click", () => openProductModal(p.id));
+        const rowDel = document.createElement("span");
+        rowDel.className = "btn-del";
+        rowDel.textContent = "×";
+        rowDel.title = "Delete this product";
+        rowDel.addEventListener("click", guardEdit((e) => {
+          e.stopPropagation();
+          if(!confirm(`Delete "${p.name}"? This can't be undone.`)) return;
+          state.lineItems = state.lineItems.filter(x => x.id !== p.id);
+          saveState(); renderLineItems();
+        }));
+        tr.querySelector(".lineitem-row-del").appendChild(rowDel);
         tbody.appendChild(tr);
       });
       table.appendChild(tbody);
@@ -2356,6 +2391,8 @@ function renderLineItems(){
 /* ---- Product modal ---- */
 let editingLineItemId = null;
 let draftVariants = [];
+let draftPhotos = [];
+let draftBlueprint = null; // { name, dataUrl, isPdf } or null
 
 function populateProductCategoryOptions(){
   const sel = document.getElementById("pm-category");
@@ -2414,11 +2451,65 @@ const addDraftVariant = guardEdit(function(){
   renderVariantsList();
 });
 
+function renderPhotosGallery(){
+  const gallery = document.getElementById("pm-photos-gallery");
+  if(!gallery) return;
+  gallery.innerHTML = "";
+  draftPhotos.forEach((photo, idx) => {
+    const thumb = document.createElement("div");
+    thumb.className = "pm-photo-thumb";
+    const img = document.createElement("img");
+    img.src = photo;
+    img.alt = "";
+    thumb.appendChild(img);
+    const remove = document.createElement("span");
+    remove.className = "pm-photo-remove";
+    remove.textContent = "×";
+    remove.title = "Remove this photo";
+    remove.addEventListener("click", guardEdit(() => {
+      draftPhotos = draftPhotos.filter((_, i) => i !== idx);
+      renderPhotosGallery();
+    }));
+    thumb.appendChild(remove);
+    gallery.appendChild(thumb);
+  });
+}
+
+function renderBlueprintStatus(){
+  const el = document.getElementById("pm-blueprint-status");
+  if(!el) return;
+  el.innerHTML = "";
+  if(!draftBlueprint){
+    el.textContent = "No blueprint attached";
+    return;
+  }
+  const link = document.createElement("a");
+  link.href = draftBlueprint.dataUrl;
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.textContent = draftBlueprint.name || (draftBlueprint.isPdf ? "Blueprint.pdf" : "Blueprint image");
+  const remove = document.createElement("span");
+  remove.className = "btn-del";
+  remove.textContent = "×";
+  remove.title = "Remove blueprint";
+  remove.addEventListener("click", guardEdit(() => {
+    draftBlueprint = null;
+    renderBlueprintStatus();
+  }));
+  el.appendChild(link);
+  el.appendChild(remove);
+}
+
 function openProductModal(lineItemId, presetCategoryId){
   populateProductCategoryOptions();
   editingLineItemId = lineItemId;
   const product = lineItemId ? state.lineItems.find(p => p.id === lineItemId) : null;
   draftVariants = product ? (product.variants || []).map(v => ({...v})) : [];
+  // Back-compat: earlier version of this feature stored a single `photoData` field.
+  draftPhotos = product ? (product.photos ? product.photos.slice() : (product.photoData ? [product.photoData] : [])) : [];
+  draftBlueprint = product && product.blueprintData
+    ? { dataUrl: product.blueprintData, name: product.blueprintName, isPdf: product.blueprintIsPdf }
+    : null;
 
   document.getElementById("product-modal-title").textContent = product ? "Edit Product" : "New Product";
   document.getElementById("pm-name").value = product ? product.name : "";
@@ -2426,21 +2517,13 @@ function openProductModal(lineItemId, presetCategoryId){
   document.getElementById("pm-price").value = product && product.price != null ? product.price : "";
   document.getElementById("pm-status").value = product ? (product.status || "draft") : "active";
   document.getElementById("pm-category").value = product ? product.categoryId : (presetCategoryId || "");
+  document.getElementById("pm-material").value = product ? (product.material || "") : "";
+  document.getElementById("pm-dimensions").value = product ? (product.dimensions || "") : "";
   document.getElementById("pm-description").value = product ? (product.description || "") : "";
   document.getElementById("pm-delete-btn").classList.toggle("hidden", !product);
 
-  const preview = document.getElementById("pm-photo-preview");
-  if(product && product.photoData){
-    preview.innerHTML = "";
-    const img = document.createElement("img");
-    img.src = product.photoData;
-    img.style.width = "100%"; img.style.height = "100%"; img.style.borderRadius = "8px"; img.style.objectFit = "cover";
-    preview.appendChild(img);
-  } else {
-    preview.innerHTML = "";
-    preview.textContent = "—";
-  }
-
+  renderPhotosGallery();
+  renderBlueprintStatus();
   renderVariantsList();
   document.getElementById("product-modal-overlay").classList.remove("hidden");
 }
@@ -2449,6 +2532,8 @@ function closeProductModal(){
   document.getElementById("product-modal-overlay").classList.add("hidden");
   editingLineItemId = null;
   draftVariants = [];
+  draftPhotos = [];
+  draftBlueprint = null;
 }
 
 const saveProductFromModal = guardEdit(function(){
@@ -2464,20 +2549,26 @@ const saveProductFromModal = guardEdit(function(){
     price: priceVal === "" ? null : Number(priceVal),
     status: document.getElementById("pm-status").value,
     categoryId,
+    material: document.getElementById("pm-material").value.trim(),
+    dimensions: document.getElementById("pm-dimensions").value.trim(),
     description: document.getElementById("pm-description").value.trim(),
     variants: draftVariants.slice(),
+    photos: draftPhotos.slice(),
+    blueprintData: draftBlueprint ? draftBlueprint.dataUrl : null,
+    blueprintName: draftBlueprint ? draftBlueprint.name : null,
+    blueprintIsPdf: draftBlueprint ? !!draftBlueprint.isPdf : false,
   };
-  const existingPhoto = editingLineItemId ? (state.lineItems.find(p => p.id === editingLineItemId) || {}).photoData : null;
-  fields.photoData = pendingPhotoData !== undefined ? pendingPhotoData : existingPhoto;
 
   if(editingLineItemId){
     const product = state.lineItems.find(p => p.id === editingLineItemId);
-    if(product) Object.assign(product, fields);
+    if(product){
+      delete product.photoData; // fully migrated to the `photos` array on next save
+      Object.assign(product, fields);
+    }
   } else {
     const id = "li" + (state.nextIds.lineItem++);
     state.lineItems.push({id, ...fields});
   }
-  pendingPhotoData = undefined;
   saveState(); renderLineItems();
   closeProductModal();
 });
@@ -2490,21 +2581,39 @@ const deleteProductFromModal = guardEdit(function(){
   closeProductModal();
 });
 
-let pendingPhotoData; // undefined = no change made this session; set once a new photo is chosen
 const handleProductPhotoUpload = guardEdit(async function(file){
   if(!file) return;
   if(!file.type.startsWith("image/")){ alert("Please choose an image file."); return; }
   try{
-    const dataUrl = await resizeImageToDataUrl(file, 300);
-    pendingPhotoData = dataUrl;
-    const preview = document.getElementById("pm-photo-preview");
-    preview.innerHTML = "";
-    const img = document.createElement("img");
-    img.src = dataUrl;
-    img.style.width = "100%"; img.style.height = "100%"; img.style.borderRadius = "8px"; img.style.objectFit = "cover";
-    preview.appendChild(img);
+    const dataUrl = await resizeImageToDataUrl(file, 500);
+    draftPhotos.push(dataUrl);
+    renderPhotosGallery();
   }catch(err){
     alert("Couldn't process that photo: " + (err.message || "unknown error"));
+  }
+});
+
+const handleBlueprintUpload = guardEdit(async function(file){
+  if(!file) return;
+  const isPdf = file.type === "application/pdf";
+  const isImage = file.type.startsWith("image/");
+  if(!isPdf && !isImage){ alert("Please choose an image or a PDF file."); return; }
+  try{
+    let dataUrl;
+    if(isImage){
+      dataUrl = await resizeImageToDataUrl(file, 900); // more detail than a thumbnail — this is a working drawing
+    } else {
+      dataUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Couldn't read that file"));
+        reader.readAsDataURL(file);
+      });
+    }
+    draftBlueprint = { dataUrl, name: file.name, isPdf };
+    renderBlueprintStatus();
+  }catch(err){
+    alert("Couldn't process that blueprint: " + (err.message || "unknown error"));
   }
 });
 
@@ -2651,6 +2760,12 @@ function bindEvents(){
   document.getElementById("pm-photo-btn").addEventListener("click", () => pmPhotoInput.click());
   pmPhotoInput.addEventListener("change", (e) => {
     if(e.target.files && e.target.files[0]) handleProductPhotoUpload(e.target.files[0]);
+    e.target.value = "";
+  });
+  const pmBlueprintInput = document.getElementById("pm-blueprint-input");
+  document.getElementById("pm-blueprint-btn").addEventListener("click", () => pmBlueprintInput.click());
+  pmBlueprintInput.addEventListener("change", (e) => {
+    if(e.target.files && e.target.files[0]) handleBlueprintUpload(e.target.files[0]);
     e.target.value = "";
   });
 
