@@ -568,6 +568,14 @@
       <h1 class="page-title">Timeline</h1>
       <div class="page-sub">The three-phase path from the GTM deck: jewelry capsule first, then scale, then the leather launch.</div>
     </div>
+    <div class="panel" id="add-phase-form">
+      <h3>Add a new phase</h3>
+      <div class="toolbar" style="margin-bottom:0;">
+        <input type="text" id="new-phase-badge" placeholder="e.g. Months 18–24" style="flex:1;min-width:160px;"/>
+        <input type="text" id="new-phase-title" placeholder="Phase title" style="flex:2;min-width:180px;"/>
+        <button class="btn btn-gold" id="add-phase-btn">Add phase</button>
+      </div>
+    </div>
     <div id="timeline-phases"></div>
     <div class="panel">
       <h3>Vetting checklist</h3>
@@ -1969,22 +1977,11 @@ function renderTimeline(){
     wrap.appendChild(div);
   });
 
-  // Add-new-phase form, once, after all phase panels
-  let addPhaseForm = document.getElementById("add-phase-form");
-  if(!addPhaseForm){
-    addPhaseForm = document.createElement("div");
-    addPhaseForm.id = "add-phase-form";
-    addPhaseForm.className = "panel";
-    addPhaseForm.innerHTML = `
-      <h3>Add a new phase</h3>
-      <div class="toolbar" style="margin-bottom:0;">
-        <input type="text" id="new-phase-badge" placeholder="e.g. Months 18–24" style="flex:1;min-width:160px;"/>
-        <input type="text" id="new-phase-title" placeholder="Phase title" style="flex:2;min-width:180px;"/>
-        <button class="btn btn-gold" id="add-phase-btn">Add phase</button>
-      </div>
-    `;
-    wrap.parentElement.insertBefore(addPhaseForm, wrap.nextSibling);
-    document.getElementById("add-phase-btn").addEventListener("click", guardEdit(() => {
+  // Add-new-phase form lives above the phases now (static HTML) — wire it up once.
+  const addPhaseBtn = document.getElementById("add-phase-btn");
+  if(addPhaseBtn && !addPhaseBtn.dataset.wired){
+    addPhaseBtn.dataset.wired = "true";
+    addPhaseBtn.addEventListener("click", guardEdit(() => {
       const badge = document.getElementById("new-phase-badge").value.trim();
       const title = document.getElementById("new-phase-title").value.trim();
       if(!title) return;
