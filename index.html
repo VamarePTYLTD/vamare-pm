@@ -322,6 +322,49 @@
   }
   .notif-item-clear:hover{ color:var(--st-rejected); }
   .notif-empty{ padding:24px 16px; text-align:center; color:var(--muted); font-size:12.5px; }
+
+  /* ---------- Line Items (categories + products) ---------- */
+  .category-head{ display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .category-name-input{
+    font-weight:700; font-size:15px; border:1px solid transparent; padding:5px 7px;
+    font-family:inherit; background:transparent; flex:1; min-width:160px;
+  }
+  .category-name-input:hover{ border-color:var(--line); }
+  .category-name-input:focus{ outline:none; border-color:var(--gold); background:#fff; }
+  .category-count{ font-size:11.5px; color:var(--muted); margin-left:auto; }
+  .lineitem-table{ width:100%; border-collapse:collapse; font-size:13px; margin-bottom:10px; }
+  .lineitem-table td{ padding:9px 6px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  .lineitem-row{ cursor:pointer; }
+  .lineitem-row:hover{ background:var(--cream); }
+  .lineitem-photo{
+    width:36px; height:36px; border-radius:6px; object-fit:cover; background:var(--cream-2);
+    display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:10px; flex:none;
+  }
+  .lineitem-name{ font-weight:600; }
+  .lineitem-sku{ color:var(--muted); font-size:11.5px; }
+  .status-pill{
+    display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:0.4px; text-transform:uppercase;
+    padding:2px 8px; color:#fff;
+  }
+  .status-active{ background:var(--st-approved); }
+  .status-draft{ background:var(--st-none); }
+  .status-archived{ background:var(--st-rejected); }
+  .lineitem-empty{ padding:16px 0; color:var(--muted); font-size:12.5px; }
+  .add-product-trigger{
+    display:block; width:100%; padding:10px; text-align:center;
+    background:none; border:1.5px dashed var(--line); color:var(--muted);
+    font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .add-product-trigger:hover{ border-color:var(--gold-deep); color:var(--gold-deep); }
+  .variant-row{
+    display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); font-size:12.5px;
+  }
+  .variant-row:last-child{ border-bottom:none; }
+  .variant-row .v-name{ flex:2; font-weight:600; }
+  .variant-row .v-sku{ flex:1; color:var(--muted); }
+  .variant-row .v-price{ flex:1; color:var(--gold-deep); }
+  .variant-row .v-inv{ flex:1; color:var(--muted); }
+
   .role-pill{
     display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
     padding:2px 7px; margin-top:4px; color:#fff;
@@ -622,6 +665,94 @@
     </div>
   </section>
 
+  <!-- LINE ITEMS -->
+  <section id="tab-lineitems" class="tab hidden">
+    <div class="page-head">
+      <div class="eyebrow">Section 5</div>
+      <h1 class="page-title">Line Items</h1>
+      <div class="page-sub">Your product catalog — organized into categories, each holding the individual pieces (and their variants) within it.</div>
+    </div>
+    <div class="panel">
+      <h3>Add a category</h3>
+      <div class="toolbar" style="margin-bottom:0;">
+        <input type="text" id="new-category-name" placeholder="e.g. Vermeil Gold Rings" style="flex:1;min-width:220px;"/>
+        <button class="btn btn-gold" id="add-category-btn">Add category</button>
+      </div>
+    </div>
+    <div id="categories-wrap"></div>
+  </section>
+
+  <!-- PRODUCT MODAL (add/edit line item) -->
+  <div id="product-modal-overlay" class="hidden">
+    <div class="task-modal">
+      <div class="task-modal-head">
+        <h3 id="product-modal-title">New Product</h3>
+        <span class="task-modal-close" id="product-modal-close" data-always-enabled="true">&times;</span>
+      </div>
+      <div class="task-modal-body">
+        <div class="tm-field">
+          <label>Product name</label>
+          <input type="text" id="pm-name" placeholder="e.g. Signet Ring — Vermeil Gold" />
+        </div>
+        <div class="tm-row">
+          <div class="tm-field">
+            <label>SKU</label>
+            <input type="text" id="pm-sku" placeholder="e.g. VMR-RG-001" />
+          </div>
+          <div class="tm-field">
+            <label>Price (AUD)</label>
+            <input type="number" id="pm-price" step="0.01" min="0" placeholder="0.00" />
+          </div>
+        </div>
+        <div class="tm-row">
+          <div class="tm-field">
+            <label>Status</label>
+            <select id="pm-status">
+              <option value="active">Active</option>
+              <option value="draft">Draft</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+          <div class="tm-field">
+            <label>Category</label>
+            <select id="pm-category"></select>
+          </div>
+        </div>
+        <div class="tm-field">
+          <label>Photo</label>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div class="avatar" id="pm-photo-preview" style="width:64px;height:64px;border-radius:8px;font-size:22px;"></div>
+            <div>
+              <input type="file" id="pm-photo-input" accept="image/*" class="hidden" />
+              <button class="btn btn-ghost" id="pm-photo-btn" type="button" style="font-size:11px;padding:6px 10px;">Upload photo</button>
+            </div>
+          </div>
+        </div>
+        <div class="tm-field">
+          <label>Description</label>
+          <textarea id="pm-description" placeholder="A short product description…"></textarea>
+        </div>
+        <div class="tm-field">
+          <label>Variants</label>
+          <div id="pm-variants-list"></div>
+          <div class="add-card-form" style="padding:8px 0 0;">
+            <input type="text" id="pm-variant-name" placeholder="e.g. Size 7" style="flex:2;" />
+            <input type="text" id="pm-variant-sku" placeholder="SKU" style="flex:1;" />
+            <input type="number" id="pm-variant-price" placeholder="Price" step="0.01" style="flex:1;" />
+            <input type="number" id="pm-variant-inventory" placeholder="Qty" style="flex:1;" />
+            <button class="btn btn-gold" id="pm-add-variant-btn" type="button" style="flex:none;">Add</button>
+          </div>
+        </div>
+      </div>
+      <div class="task-modal-foot">
+        <span class="tm-delete-link hidden" id="pm-delete-btn">Delete product</span>
+        <div style="flex:1;"></div>
+        <button class="btn btn-ghost" id="pm-cancel-btn" type="button" data-always-enabled="true">Cancel</button>
+        <button class="btn btn-gold" id="pm-save-btn" type="button">Save product</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BUDGET -->
   <section id="tab-budget" class="tab hidden">
     <div class="page-head">
@@ -821,6 +952,7 @@ const TABS = [
   {id:"board", label:"Task Board"},
   {id:"timeline", label:"Timeline"},
   {id:"manufacturers", label:"Manufacturers"},
+  {id:"lineitems", label:"Line Items"},
   {id:"budget", label:"Budget"},
   {id:"notes", label:"Notes"},
   {id:"profile", label:"Profile"},
@@ -913,6 +1045,10 @@ const SEED_BUDGET = [
   {id:"bg5", item:"Phase 3 — handbag launch inventory", planned:"$35,000 – $63,000", committed:0},
 ];
 
+// No seed data — this is a fresh catalog the user builds themselves.
+const SEED_CATEGORIES = [];
+const SEED_LINE_ITEMS = [];
+
 /* ============================================================
    STATE + STORAGE
 ============================================================ */
@@ -964,7 +1100,7 @@ let state = seedStateSafe();
 
 function seedStateSafe(){
   try{ return seedState(); }
-  catch(e){ console.error("Seeding default state failed", e); return {board:[],timelineTasks:[],phases:[],vetting:{},manufacturers:[],budget:[],notes:[],nextIds:{board:1,manufacturer:1,budget:1,note:1,timeline:1,phase:1}}; }
+  catch(e){ console.error("Seeding default state failed", e); return {board:[],timelineTasks:[],phases:[],vetting:{},manufacturers:[],categories:[],lineItems:[],budget:[],notes:[],nextIds:{board:1,manufacturer:1,budget:1,note:1,timeline:1,phase:1,category:1,lineItem:1}}; }
 }
 
 function seedState(){
@@ -974,9 +1110,11 @@ function seedState(){
     timelineTasks: SEED_TIMELINE_TASKS.map(t => ({...t, done:false})),
     vetting: Object.fromEntries(SEED_VETTING.map(v => [v.id, false])),
     manufacturers: SEED_MANUFACTURERS.map(m => ({...m, status:"Not Contacted", notes:""})),
+    categories: SEED_CATEGORIES.map(c => ({...c})),
+    lineItems: SEED_LINE_ITEMS.map(p => ({...p})),
     budget: SEED_BUDGET.map(b => ({...b})),
     notes: [],
-    nextIds: {board:100, manufacturer:100, budget:100, note:1, timeline:100, phase:100},
+    nextIds: {board:100, manufacturer:100, budget:100, note:1, timeline:100, phase:100, category:100, lineItem:100},
   };
 }
 
@@ -1009,6 +1147,8 @@ function mergeWithSeed(saved){
       notes: byId[m.id]?.notes ?? m.notes,
     })).concat(extra);
   }
+  if(Array.isArray(saved.categories)) seed.categories = saved.categories;
+  if(Array.isArray(saved.lineItems)) seed.lineItems = saved.lineItems;
   if(Array.isArray(saved.budget) && saved.budget.length) seed.budget = saved.budget;
   if(Array.isArray(saved.notes)) seed.notes = saved.notes;
   if(saved.nextIds) seed.nextIds = {...seed.nextIds, ...saved.nextIds};
@@ -2106,6 +2246,269 @@ const addManufacturer = guardEdit(function(){
 });
 
 /* ============================================================
+   LINE ITEMS (categories + products + variants)
+============================================================ */
+const addCategory = guardEdit(function(){
+  const input = document.getElementById("new-category-name");
+  const name = input.value.trim();
+  if(!name) return;
+  const id = "cat" + (state.nextIds.category++);
+  state.categories.push({id, name});
+  input.value = "";
+  saveState(); renderLineItems();
+});
+
+function statusPillHtml(status){
+  const label = { active:"Active", draft:"Draft", archived:"Archived" }[status] || "Draft";
+  return `<span class="status-pill status-${status || "draft"}">${label}</span>`;
+}
+
+function renderLineItems(){
+  const wrap = document.getElementById("categories-wrap");
+  if(!wrap) return;
+  wrap.innerHTML = "";
+
+  if(state.categories.length === 0){
+    wrap.innerHTML = `<div class="panel"><div class="lineitem-empty">No categories yet — add one above to start building your catalog.</div></div>`;
+    return;
+  }
+
+  state.categories.forEach(cat => {
+    const items = state.lineItems.filter(p => p.categoryId === cat.id);
+
+    const panel = document.createElement("div");
+    panel.className = "panel category-panel";
+
+    const head = document.createElement("div");
+    head.className = "category-head";
+
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "category-name-input";
+    nameInput.value = cat.name;
+    nameInput.addEventListener("change", guardEdit((e) => {
+      cat.name = e.target.value.trim() || cat.name;
+      nameInput.value = cat.name;
+      saveState();
+      populateProductCategoryOptions();
+    }));
+
+    const count = document.createElement("span");
+    count.className = "category-count";
+    count.textContent = `${items.length} product${items.length === 1 ? "" : "s"}`;
+
+    const delBtn = document.createElement("span");
+    delBtn.className = "btn-del";
+    delBtn.textContent = "×";
+    delBtn.title = "Delete this category and all its products";
+    delBtn.addEventListener("click", guardEdit(() => {
+      if(!confirm(`Delete "${cat.name}" and all ${items.length} of its products? This can't be undone.`)) return;
+      state.categories = state.categories.filter(c => c.id !== cat.id);
+      state.lineItems = state.lineItems.filter(p => p.categoryId !== cat.id);
+      saveState(); renderLineItems();
+    }));
+
+    head.appendChild(nameInput);
+    head.appendChild(count);
+    head.appendChild(delBtn);
+    panel.appendChild(head);
+
+    if(items.length === 0){
+      const empty = document.createElement("div");
+      empty.className = "lineitem-empty";
+      empty.textContent = "No products in this category yet.";
+      panel.appendChild(empty);
+    } else {
+      const table = document.createElement("table");
+      table.className = "lineitem-table";
+      const tbody = document.createElement("tbody");
+      items.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.className = "lineitem-row";
+        const photoCell = p.photoData
+          ? `<img class="lineitem-photo" src="${p.photoData}" alt="" />`
+          : `<div class="lineitem-photo">No photo</div>`;
+        const variantCount = (p.variants || []).length;
+        tr.innerHTML = `
+          <td style="width:52px;">${photoCell}</td>
+          <td><div class="lineitem-name">${p.name}</div><div class="lineitem-sku">${p.sku || "No SKU"}</div></td>
+          <td>${variantCount ? variantCount + " variant" + (variantCount===1?"":"s") : (p.price != null ? "$" + Number(p.price).toFixed(2) : "—")}</td>
+          <td>${statusPillHtml(p.status)}</td>
+        `;
+        tr.addEventListener("click", () => openProductModal(p.id));
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      panel.appendChild(table);
+    }
+
+    const addTrigger = document.createElement("button");
+    addTrigger.className = "add-product-trigger";
+    addTrigger.type = "button";
+    addTrigger.textContent = "+ Add product";
+    addTrigger.addEventListener("click", () => openProductModal(null, cat.id));
+    panel.appendChild(addTrigger);
+
+    wrap.appendChild(panel);
+  });
+}
+
+/* ---- Product modal ---- */
+let editingLineItemId = null;
+let draftVariants = [];
+
+function populateProductCategoryOptions(){
+  const sel = document.getElementById("pm-category");
+  if(!sel) return;
+  const current = sel.value;
+  sel.innerHTML = "";
+  state.categories.forEach(cat => {
+    const opt = document.createElement("option");
+    opt.value = cat.id;
+    opt.textContent = cat.name;
+    sel.appendChild(opt);
+  });
+  if(current) sel.value = current;
+}
+
+function renderVariantsList(){
+  const list = document.getElementById("pm-variants-list");
+  if(!list) return;
+  if(draftVariants.length === 0){
+    list.innerHTML = `<div class="lineitem-empty" style="padding:8px 0;">No variants yet — add one below (e.g. sizes).</div>`;
+    return;
+  }
+  list.innerHTML = "";
+  draftVariants.forEach(v => {
+    const row = document.createElement("div");
+    row.className = "variant-row";
+    row.innerHTML = `
+      <span class="v-name">${v.name}</span>
+      <span class="v-sku">${v.sku || "—"}</span>
+      <span class="v-price">${v.price != null && v.price !== "" ? "$" + Number(v.price).toFixed(2) : "—"}</span>
+      <span class="v-inv">${v.inventory != null && v.inventory !== "" ? v.inventory + " in stock" : "—"}</span>
+    `;
+    const del = document.createElement("span");
+    del.className = "btn-del";
+    del.textContent = "×";
+    del.addEventListener("click", guardEdit(() => {
+      draftVariants = draftVariants.filter(x => x.id !== v.id);
+      renderVariantsList();
+    }));
+    row.appendChild(del);
+    list.appendChild(row);
+  });
+}
+
+const addDraftVariant = guardEdit(function(){
+  const name = document.getElementById("pm-variant-name").value.trim();
+  if(!name) return;
+  const sku = document.getElementById("pm-variant-sku").value.trim();
+  const price = document.getElementById("pm-variant-price").value;
+  const inventory = document.getElementById("pm-variant-inventory").value;
+  draftVariants.push({
+    id: "var" + Date.now() + Math.random().toString(36).slice(2,6),
+    name, sku, price: price === "" ? null : Number(price), inventory: inventory === "" ? null : Number(inventory),
+  });
+  ["pm-variant-name","pm-variant-sku","pm-variant-price","pm-variant-inventory"].forEach(id => document.getElementById(id).value = "");
+  renderVariantsList();
+});
+
+function openProductModal(lineItemId, presetCategoryId){
+  populateProductCategoryOptions();
+  editingLineItemId = lineItemId;
+  const product = lineItemId ? state.lineItems.find(p => p.id === lineItemId) : null;
+  draftVariants = product ? (product.variants || []).map(v => ({...v})) : [];
+
+  document.getElementById("product-modal-title").textContent = product ? "Edit Product" : "New Product";
+  document.getElementById("pm-name").value = product ? product.name : "";
+  document.getElementById("pm-sku").value = product ? (product.sku || "") : "";
+  document.getElementById("pm-price").value = product && product.price != null ? product.price : "";
+  document.getElementById("pm-status").value = product ? (product.status || "draft") : "active";
+  document.getElementById("pm-category").value = product ? product.categoryId : (presetCategoryId || "");
+  document.getElementById("pm-description").value = product ? (product.description || "") : "";
+  document.getElementById("pm-delete-btn").classList.toggle("hidden", !product);
+
+  const preview = document.getElementById("pm-photo-preview");
+  if(product && product.photoData){
+    preview.innerHTML = "";
+    const img = document.createElement("img");
+    img.src = product.photoData;
+    img.style.width = "100%"; img.style.height = "100%"; img.style.borderRadius = "8px"; img.style.objectFit = "cover";
+    preview.appendChild(img);
+  } else {
+    preview.innerHTML = "";
+    preview.textContent = "—";
+  }
+
+  renderVariantsList();
+  document.getElementById("product-modal-overlay").classList.remove("hidden");
+}
+
+function closeProductModal(){
+  document.getElementById("product-modal-overlay").classList.add("hidden");
+  editingLineItemId = null;
+  draftVariants = [];
+}
+
+const saveProductFromModal = guardEdit(function(){
+  const name = document.getElementById("pm-name").value.trim();
+  if(!name){ document.getElementById("pm-name").focus(); return; }
+  const categoryId = document.getElementById("pm-category").value;
+  if(!categoryId){ alert("Please add a category first."); return; }
+  const priceVal = document.getElementById("pm-price").value;
+
+  const fields = {
+    name,
+    sku: document.getElementById("pm-sku").value.trim(),
+    price: priceVal === "" ? null : Number(priceVal),
+    status: document.getElementById("pm-status").value,
+    categoryId,
+    description: document.getElementById("pm-description").value.trim(),
+    variants: draftVariants.slice(),
+  };
+  const existingPhoto = editingLineItemId ? (state.lineItems.find(p => p.id === editingLineItemId) || {}).photoData : null;
+  fields.photoData = pendingPhotoData !== undefined ? pendingPhotoData : existingPhoto;
+
+  if(editingLineItemId){
+    const product = state.lineItems.find(p => p.id === editingLineItemId);
+    if(product) Object.assign(product, fields);
+  } else {
+    const id = "li" + (state.nextIds.lineItem++);
+    state.lineItems.push({id, ...fields});
+  }
+  pendingPhotoData = undefined;
+  saveState(); renderLineItems();
+  closeProductModal();
+});
+
+const deleteProductFromModal = guardEdit(function(){
+  if(!editingLineItemId) return;
+  if(!confirm("Delete this product? This can't be undone.")) return;
+  state.lineItems = state.lineItems.filter(p => p.id !== editingLineItemId);
+  saveState(); renderLineItems();
+  closeProductModal();
+});
+
+let pendingPhotoData; // undefined = no change made this session; set once a new photo is chosen
+const handleProductPhotoUpload = guardEdit(async function(file){
+  if(!file) return;
+  if(!file.type.startsWith("image/")){ alert("Please choose an image file."); return; }
+  try{
+    const dataUrl = await resizeImageToDataUrl(file, 300);
+    pendingPhotoData = dataUrl;
+    const preview = document.getElementById("pm-photo-preview");
+    preview.innerHTML = "";
+    const img = document.createElement("img");
+    img.src = dataUrl;
+    img.style.width = "100%"; img.style.height = "100%"; img.style.borderRadius = "8px"; img.style.objectFit = "cover";
+    preview.appendChild(img);
+  }catch(err){
+    alert("Couldn't process that photo: " + (err.message || "unknown error"));
+  }
+});
+
+/* ============================================================
    BUDGET
 ============================================================ */
 function renderBudget(){
@@ -2205,6 +2608,8 @@ function bindEvents(){
   document.getElementById("mfg-group-filter").addEventListener("change", renderManufacturers);
   document.getElementById("mfg-status-filter").addEventListener("change", renderManufacturers);
   document.getElementById("add-mfg-btn").addEventListener("click", addManufacturer);
+  document.getElementById("add-category-btn").addEventListener("click", addCategory);
+  document.getElementById("new-category-name").addEventListener("keydown", (e) => { if(e.key==="Enter") addCategory(); });
   document.getElementById("add-budget-btn").addEventListener("click", addBudgetLine);
   document.getElementById("add-note-btn").addEventListener("click", addNote);
 
@@ -2231,6 +2636,22 @@ function bindEvents(){
   document.getElementById("tm-delete-btn").addEventListener("click", deleteTaskFromModal);
   document.getElementById("task-modal-overlay").addEventListener("click", (e) => {
     if(e.target.id === "task-modal-overlay") closeTaskModal();
+  });
+
+  // Product modal
+  document.getElementById("product-modal-close").addEventListener("click", closeProductModal);
+  document.getElementById("pm-cancel-btn").addEventListener("click", closeProductModal);
+  document.getElementById("pm-save-btn").addEventListener("click", saveProductFromModal);
+  document.getElementById("pm-delete-btn").addEventListener("click", deleteProductFromModal);
+  document.getElementById("pm-add-variant-btn").addEventListener("click", addDraftVariant);
+  document.getElementById("product-modal-overlay").addEventListener("click", (e) => {
+    if(e.target.id === "product-modal-overlay") closeProductModal();
+  });
+  const pmPhotoInput = document.getElementById("pm-photo-input");
+  document.getElementById("pm-photo-btn").addEventListener("click", () => pmPhotoInput.click());
+  pmPhotoInput.addEventListener("change", (e) => {
+    if(e.target.files && e.target.files[0]) handleProductPhotoUpload(e.target.files[0]);
+    e.target.value = "";
   });
 
   // Profile — never guarded by role, editing your own name/photo is always allowed.
@@ -2398,6 +2819,7 @@ function renderAll(){
   renderTimeline();
   populateGroupFilter();
   renderManufacturers();
+  renderLineItems();
   renderBudget();
   renderNotes();
   renderProfile();
