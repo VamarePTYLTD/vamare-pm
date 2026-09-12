@@ -543,7 +543,7 @@
       </div>
 
       <div id="auth-reset-view" class="hidden">
-        <div class="auth-note" style="margin-top:0;margin-bottom:16px;">Choose a new password for your account.</div>
+        <div class="auth-note" id="reset-view-note" style="margin-top:0;margin-bottom:16px;">Choose a new password for your account.</div>
         <form id="reset-form">
           <div class="auth-field">
             <label>New password</label>
@@ -1335,6 +1335,19 @@ function showAuthView(view){
 
 let authMode = "login"; // "login" | "signup"
 
+// True while the URL still carries an invite/recovery token — used so the
+// SIGNED_IN handler doesn't race ahead and log someone straight into the app
+// before they've had a chance to set a password on the reset/invite screen.
+// True from the moment we detect an invite/recovery link until they finish
+// setting a password (or it turns out to be expired). A persistent flag
+// rather than re-checking the URL each time, because we deliberately strip
+// the token out of the address bar as soon as we detect it (for security) —
+// re-reading the URL afterward would see it as if it had never been there.
+let onPasswordSetupScreen = false;
+function isPasswordSetupLink(){
+  return onPasswordSetupScreen;
+}
+
 function setupAuthForm(){
   const form = document.getElementById("auth-form");
   const modeLink = document.getElementById("auth-mode-link");
@@ -1439,8 +1452,9 @@ function setupAuthForm(){
     try{
       const { error } = await sb.auth.updateUser({ password: pw1 });
       if(error) throw error;
-      // They already hold a valid (recovery) session at this point, so just
-      // continue straight into the app rather than asking them to log in again.
+      // They already hold a valid (recovery/invite) session at this point, so
+      // just continue straight into the app rather than asking them to log in again.
+      onPasswordSetupScreen = false;
       const { data: { session } } = await sb.auth.getSession();
       if(session) await onLoggedIn(session.user);
     }catch(err){
@@ -1581,12 +1595,18 @@ async function initAuth(){
     return;
   }
 
-  // Detect a password-recovery link directly from the URL itself, rather than
-  // relying only on the PASSWORD_RECOVERY event's timing relative to getSession()
-  // — Supabase's own session detection can resolve before or after that event
-  // fires depending on conditions, so the URL is the one signal we can trust.
-  const cameFromRecoveryLink =
-    window.location.hash.includes("type=recovery") || window.location.search.includes("type=recovery");
+  // Detect a password-recovery OR invite link directly from the URL itself,
+  // rather than relying only on an auth event's timing relative to
+  // getSession() — Supabase's own session detection can resolve before or
+  // after that event fires depending on conditions, so the URL is the one
+  // signal we can trust. Both link types land here needing a password set
+  // before they can use the app — only the wording differs.
+  const isInviteLink = window.location.hash.includes("type=invite") || window.location.search.includes("type=invite");
+  const isRecoveryLink = window.location.hash.includes("type=recovery") || window.location.search.includes("type=recovery");
+  const cameFromRecoveryLink = isInviteLink || isRecoveryLink;
+  // Set before attaching the listener below, so a same-tick SIGNED_IN event
+  // can't race ahead and log them in before we've decided what to show.
+  onPasswordSetupScreen = cameFromRecoveryLink;
 
   // Still attached, as a backup path and to catch sign-in/sign-out normally.
   attachAuthStateListener();
@@ -1599,10 +1619,22 @@ async function initAuth(){
     document.getElementById("auth-loading").classList.add("hidden");
     document.getElementById("auth-form-wrap").classList.remove("hidden");
     if(session){
+      const note = document.getElementById("reset-view-note");
+      const submitBtn = document.getElementById("reset-submit-btn");
+      if(isInviteLink){
+        note.textContent = "Welcome to Vamaré! Set a password below so you can log in on your own from now on.";
+        submitBtn.textContent = "Set password & continue";
+      } else {
+        note.textContent = "Choose a new password for your account.";
+        submitBtn.textContent = "Set new password";
+      }
       showAuthView("reset");
     } else {
+      onPasswordSetupScreen = false; // link was expired/used — nothing to guard anymore
       showAuthView("login");
-      showAuthError("That reset link has expired or was already used — please request a new one.");
+      showAuthError(isInviteLink
+        ? "That invite link has expired or was already used — ask the owner to send you a new one."
+        : "That reset link has expired or was already used — please request a new one.");
     }
     return;
   }
@@ -1621,12 +1653,17 @@ function handleAuthStateChange(event, session){
   if(event === "PASSWORD_RECOVERY"){
     // They've just landed here via the emailed reset link — show the
     // "set a new password" screen regardless of anything else going on.
+    onPasswordSetupScreen = true;
     document.getElementById("auth-loading").classList.add("hidden");
     document.getElementById("auth-form-wrap").classList.remove("hidden");
     showAuthView("reset");
     return;
   }
   if(event === "SIGNED_IN" && session && !currentUser){
+    // Don't race ahead of initAuth()'s own handling of an invite/recovery
+    // link — if one's present, wait for them to actually set a password
+    // rather than silently logging them straight into the app.
+    if(isPasswordSetupLink()) return;
     onLoggedIn(session.user);
   }
   if(event === "SIGNED_OUT"){
