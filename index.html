@@ -369,7 +369,7 @@
   .tm-delete-link{ font-size:12.5px; color:var(--st-rejected); cursor:pointer; text-decoration:underline; }
   .tm-delete-link.hidden{ display:none; }
   .add-task-trigger{
-    display:block; width:100%; margin-top:14px; padding:12px; text-align:center;
+    display:block; width:100%; margin-bottom:16px; padding:12px; text-align:center;
     background:none; border:1.5px dashed var(--line); color:var(--muted);
     font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;
   }
@@ -544,6 +544,7 @@
       <h1 class="page-title">Task Board</h1>
       <div class="page-sub">Drag cards between columns, or add your own tasks as things come up — this isn't fixed to the original plan.</div>
     </div>
+    <button id="add-task-trigger" class="add-task-trigger" type="button">+ Add task</button>
     <div class="board" id="board"></div>
   </section>
 
@@ -569,6 +570,16 @@
       <h1 class="page-title">Manufacturer Outreach</h1>
       <div class="page-sub">30 China manufacturer leads across four specialties, plus room to add more as you find them. Leads to vet, not pre-vetted partners.</div>
     </div>
+    <div class="panel">
+      <h3>Add a manufacturer</h3>
+      <div class="toolbar" style="margin-bottom:0;">
+        <input type="text" id="new-mfg-name" placeholder="Name" style="flex:1;min-width:140px;"/>
+        <input type="text" id="new-mfg-location" placeholder="Location" style="flex:1;min-width:120px;"/>
+        <input type="text" id="new-mfg-specialty" placeholder="Specialty" style="flex:2;min-width:180px;"/>
+        <input type="text" id="new-mfg-url" placeholder="Website (https://…)" style="flex:1;min-width:160px;"/>
+        <button class="btn btn-gold" id="add-mfg-btn">Add</button>
+      </div>
+    </div>
     <div class="toolbar">
       <input type="text" id="mfg-search" placeholder="Search name, location, specialty…" data-always-enabled="true" />
       <select id="mfg-group-filter" data-always-enabled="true"><option value="">All groups</option></select>
@@ -587,16 +598,6 @@
         </tr></thead>
         <tbody id="mfg-tbody"></tbody>
       </table>
-    </div>
-    <div class="panel">
-      <h3>Add a manufacturer</h3>
-      <div class="toolbar" style="margin-bottom:0;">
-        <input type="text" id="new-mfg-name" placeholder="Name" style="flex:1;min-width:140px;"/>
-        <input type="text" id="new-mfg-location" placeholder="Location" style="flex:1;min-width:120px;"/>
-        <input type="text" id="new-mfg-specialty" placeholder="Specialty" style="flex:2;min-width:180px;"/>
-        <input type="text" id="new-mfg-url" placeholder="Website (https://…)" style="flex:1;min-width:160px;"/>
-        <button class="btn btn-gold" id="add-mfg-btn">Add</button>
-      </div>
     </div>
   </section>
 
@@ -1492,16 +1493,11 @@ function renderBoard(){
     board.appendChild(colDiv);
   });
 
-  // "+ Add task" trigger, once, below the board
-  let trigger = document.getElementById("add-task-trigger");
-  if(!trigger){
-    trigger = document.createElement("button");
-    trigger.id = "add-task-trigger";
-    trigger.className = "add-task-trigger";
-    trigger.type = "button";
-    trigger.textContent = "+ Add task";
+  // "+ Add task" trigger lives above the board now (static HTML) — just wire it up once.
+  const trigger = document.getElementById("add-task-trigger");
+  if(trigger && !trigger.dataset.wired){
+    trigger.dataset.wired = "true";
     trigger.addEventListener("click", () => openTaskModal(null));
-    document.getElementById("tab-board").appendChild(trigger);
   }
 }
 
