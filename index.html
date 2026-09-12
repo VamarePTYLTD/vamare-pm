@@ -357,15 +357,30 @@
   }
   .add-product-trigger:hover{ border-color:var(--gold-deep); color:var(--gold-deep); }
   .variant-row{
-    display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--line); font-size:12.5px;
+    display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:12.5px;
   }
   .variant-row:last-child{ border-bottom:none; }
-  .variant-row .v-name{ flex:2; font-weight:600; }
-  .variant-row .v-sku{ flex:1; color:var(--muted); }
-  .variant-row .v-price{ flex:1; color:var(--gold-deep); }
-  .variant-row .v-inv{ flex:1; color:var(--muted); }
+  .variant-row .v-thumb{ width:32px; height:32px; border-radius:6px; object-fit:cover; flex:none; background:var(--cream-2); }
+  .variant-row .v-main{ flex:1; min-width:0; }
+  .variant-row .v-name{ font-weight:600; }
+  .variant-row .v-color{ color:var(--gold-deep); font-weight:600; }
+  .variant-row .v-meta{ color:var(--muted); font-size:11px; margin-top:2px; }
+  .variant-row .v-price{ color:var(--gold-deep); flex:none; width:70px; text-align:right; }
+  .variant-row .v-inv{ color:var(--muted); flex:none; width:80px; text-align:right; }
   .pm-photos-gallery{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
   .pm-photo-thumb{ position:relative; width:64px; height:64px; }
+  .dim-boxes{ display:flex; gap:10px; }
+  .dim-box{ flex:1; }
+  .dim-box label{ display:block; font-size:10px; letter-spacing:0.3px; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .dim-box input{ width:100%; font-family:inherit; font-size:13px; padding:7px 8px; border:1px solid var(--line); background:#fff; text-align:center; }
+  .variant-add-form{ padding:10px 0 0; display:flex; flex-direction:column; gap:8px; }
+  .variant-add-form .va-row{ display:flex; gap:8px; }
+  .variant-add-form .va-row input{
+    flex:1; font-family:inherit; font-size:12.5px; padding:7px 9px; border:1px solid var(--line); background:#fff;
+  }
+  .va-photo-row{ align-items:center; }
+  .va-photo-thumb{ width:36px; height:36px; flex:none; }
+  .va-photo-thumb.hidden{ display:none; }
   .pm-photo-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
   .pm-photo-thumb .pm-photo-remove{
     position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%;
@@ -728,14 +743,16 @@
             <select id="pm-category"></select>
           </div>
         </div>
-        <div class="tm-row">
-          <div class="tm-field">
-            <label>Material</label>
-            <input type="text" id="pm-material" placeholder="e.g. 10k vermeil gold, 925 sterling base" />
-          </div>
-          <div class="tm-field">
-            <label>Dimensions</label>
-            <input type="text" id="pm-dimensions" placeholder="e.g. 18mm face, 2mm band width" />
+        <div class="tm-field">
+          <label>Material</label>
+          <input type="text" id="pm-material" placeholder="e.g. 10k vermeil gold, 925 sterling base" />
+        </div>
+        <div class="tm-field">
+          <label>Dimensions</label>
+          <div class="dim-boxes">
+            <div class="dim-box"><label>Length (mm)</label><input type="text" id="pm-length" /></div>
+            <div class="dim-box"><label>Width (mm)</label><input type="text" id="pm-width" /></div>
+            <div class="dim-box"><label>Height (mm)</label><input type="text" id="pm-height" /></div>
           </div>
         </div>
         <div class="tm-field">
@@ -757,12 +774,27 @@
         <div class="tm-field">
           <label>Variants</label>
           <div id="pm-variants-list"></div>
-          <div class="add-card-form" style="padding:8px 0 0;">
-            <input type="text" id="pm-variant-name" placeholder="e.g. Size 7" style="flex:2;" />
-            <input type="text" id="pm-variant-sku" placeholder="SKU" style="flex:1;" />
-            <input type="number" id="pm-variant-price" placeholder="Price" step="0.01" style="flex:1;" />
-            <input type="number" id="pm-variant-inventory" placeholder="Qty" style="flex:1;" />
-            <button class="btn btn-gold" id="pm-add-variant-btn" type="button" style="flex:none;">Add</button>
+          <div class="variant-add-form">
+            <div class="va-row">
+              <input type="text" id="pm-variant-name" placeholder="Name, e.g. Size 7" style="flex:2;" />
+              <input type="text" id="pm-variant-sku" placeholder="SKU" style="flex:1;" />
+              <input type="text" id="pm-variant-color" placeholder="Color" style="flex:1;" />
+            </div>
+            <div class="va-row">
+              <input type="number" id="pm-variant-price" placeholder="Price" step="0.01" style="flex:1;" />
+              <input type="number" id="pm-variant-inventory" placeholder="Qty" style="flex:1;" />
+            </div>
+            <div class="dim-boxes">
+              <div class="dim-box"><label>L (mm)</label><input type="text" id="pm-variant-length" /></div>
+              <div class="dim-box"><label>W (mm)</label><input type="text" id="pm-variant-width" /></div>
+              <div class="dim-box"><label>H (mm)</label><input type="text" id="pm-variant-height" /></div>
+            </div>
+            <div class="va-row va-photo-row">
+              <div class="pm-photo-thumb va-photo-thumb hidden" id="pm-variant-photo-preview"><img alt="" /></div>
+              <input type="file" id="pm-variant-photo-input" accept="image/*" class="hidden" />
+              <button class="btn btn-ghost" id="pm-variant-photo-btn" type="button">Add photo</button>
+              <button class="btn btn-gold" id="pm-add-variant-btn" type="button" style="margin-left:auto;">Add variant</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2419,12 +2451,35 @@ function renderVariantsList(){
   draftVariants.forEach(v => {
     const row = document.createElement("div");
     row.className = "variant-row";
-    row.innerHTML = `
-      <span class="v-name">${v.name}</span>
-      <span class="v-sku">${v.sku || "—"}</span>
-      <span class="v-price">${v.price != null && v.price !== "" ? "$" + Number(v.price).toFixed(2) : "—"}</span>
-      <span class="v-inv">${v.inventory != null && v.inventory !== "" ? v.inventory + " in stock" : "—"}</span>
+
+    if(v.photo){
+      const img = document.createElement("img");
+      img.className = "v-thumb";
+      img.src = v.photo;
+      img.alt = "";
+      row.appendChild(img);
+    }
+
+    const main = document.createElement("div");
+    main.className = "v-main";
+    const dimsParts = [v.length, v.width, v.height].filter(d => d).join(" × ");
+    const metaParts = [v.sku || null, dimsParts ? dimsParts + " mm" : null].filter(Boolean).join(" · ");
+    main.innerHTML = `
+      <span class="v-name">${v.name}</span>${v.color ? ` <span class="v-color">(${v.color})</span>` : ""}
+      <div class="v-meta">${metaParts || "—"}</div>
     `;
+    row.appendChild(main);
+
+    const price = document.createElement("span");
+    price.className = "v-price";
+    price.textContent = v.price != null && v.price !== "" ? "$" + Number(v.price).toFixed(2) : "—";
+    row.appendChild(price);
+
+    const inv = document.createElement("span");
+    inv.className = "v-inv";
+    inv.textContent = v.inventory != null && v.inventory !== "" ? v.inventory + " in stock" : "—";
+    row.appendChild(inv);
+
     const del = document.createElement("span");
     del.className = "btn-del";
     del.textContent = "×";
@@ -2437,17 +2492,52 @@ function renderVariantsList(){
   });
 }
 
+let draftVariantPhoto = null;
+
+function renderVariantPhotoPreview(){
+  const wrap = document.getElementById("pm-variant-photo-preview");
+  if(!wrap) return;
+  if(!draftVariantPhoto){
+    wrap.classList.add("hidden");
+    return;
+  }
+  wrap.classList.remove("hidden");
+  wrap.querySelector("img").src = draftVariantPhoto;
+}
+
+const handleVariantPhotoUpload = guardEdit(async function(file){
+  if(!file) return;
+  if(!file.type.startsWith("image/")){ alert("Please choose an image file."); return; }
+  try{
+    draftVariantPhoto = await resizeImageToDataUrl(file, 300);
+    renderVariantPhotoPreview();
+  }catch(err){
+    alert("Couldn't process that photo: " + (err.message || "unknown error"));
+  }
+});
+
 const addDraftVariant = guardEdit(function(){
   const name = document.getElementById("pm-variant-name").value.trim();
   if(!name) return;
   const sku = document.getElementById("pm-variant-sku").value.trim();
+  const color = document.getElementById("pm-variant-color").value.trim();
   const price = document.getElementById("pm-variant-price").value;
   const inventory = document.getElementById("pm-variant-inventory").value;
+  const length = document.getElementById("pm-variant-length").value.trim();
+  const width = document.getElementById("pm-variant-width").value.trim();
+  const height = document.getElementById("pm-variant-height").value.trim();
   draftVariants.push({
     id: "var" + Date.now() + Math.random().toString(36).slice(2,6),
-    name, sku, price: price === "" ? null : Number(price), inventory: inventory === "" ? null : Number(inventory),
+    name, sku, color,
+    price: price === "" ? null : Number(price),
+    inventory: inventory === "" ? null : Number(inventory),
+    length, width, height,
+    photo: draftVariantPhoto,
   });
-  ["pm-variant-name","pm-variant-sku","pm-variant-price","pm-variant-inventory"].forEach(id => document.getElementById(id).value = "");
+  ["pm-variant-name","pm-variant-sku","pm-variant-color","pm-variant-price","pm-variant-inventory","pm-variant-length","pm-variant-width","pm-variant-height"]
+    .forEach(id => document.getElementById(id).value = "");
+  draftVariantPhoto = null;
+  renderVariantPhotoPreview();
   renderVariantsList();
 });
 
@@ -2510,6 +2600,7 @@ function openProductModal(lineItemId, presetCategoryId){
   draftBlueprint = product && product.blueprintData
     ? { dataUrl: product.blueprintData, name: product.blueprintName, isPdf: product.blueprintIsPdf }
     : null;
+  draftVariantPhoto = null;
 
   document.getElementById("product-modal-title").textContent = product ? "Edit Product" : "New Product";
   document.getElementById("pm-name").value = product ? product.name : "";
@@ -2518,13 +2609,16 @@ function openProductModal(lineItemId, presetCategoryId){
   document.getElementById("pm-status").value = product ? (product.status || "draft") : "active";
   document.getElementById("pm-category").value = product ? product.categoryId : (presetCategoryId || "");
   document.getElementById("pm-material").value = product ? (product.material || "") : "";
-  document.getElementById("pm-dimensions").value = product ? (product.dimensions || "") : "";
+  document.getElementById("pm-length").value = product ? (product.length || "") : "";
+  document.getElementById("pm-width").value = product ? (product.width || "") : "";
+  document.getElementById("pm-height").value = product ? (product.height || "") : "";
   document.getElementById("pm-description").value = product ? (product.description || "") : "";
   document.getElementById("pm-delete-btn").classList.toggle("hidden", !product);
 
   renderPhotosGallery();
   renderBlueprintStatus();
   renderVariantsList();
+  renderVariantPhotoPreview();
   document.getElementById("product-modal-overlay").classList.remove("hidden");
 }
 
@@ -2534,6 +2628,7 @@ function closeProductModal(){
   draftVariants = [];
   draftPhotos = [];
   draftBlueprint = null;
+  draftVariantPhoto = null;
 }
 
 const saveProductFromModal = guardEdit(function(){
@@ -2550,7 +2645,9 @@ const saveProductFromModal = guardEdit(function(){
     status: document.getElementById("pm-status").value,
     categoryId,
     material: document.getElementById("pm-material").value.trim(),
-    dimensions: document.getElementById("pm-dimensions").value.trim(),
+    length: document.getElementById("pm-length").value.trim(),
+    width: document.getElementById("pm-width").value.trim(),
+    height: document.getElementById("pm-height").value.trim(),
     description: document.getElementById("pm-description").value.trim(),
     variants: draftVariants.slice(),
     photos: draftPhotos.slice(),
@@ -2563,6 +2660,7 @@ const saveProductFromModal = guardEdit(function(){
     const product = state.lineItems.find(p => p.id === editingLineItemId);
     if(product){
       delete product.photoData; // fully migrated to the `photos` array on next save
+      delete product.dimensions; // fully migrated to length/width/height on next save
       Object.assign(product, fields);
     }
   } else {
@@ -2766,6 +2864,12 @@ function bindEvents(){
   document.getElementById("pm-blueprint-btn").addEventListener("click", () => pmBlueprintInput.click());
   pmBlueprintInput.addEventListener("change", (e) => {
     if(e.target.files && e.target.files[0]) handleBlueprintUpload(e.target.files[0]);
+    e.target.value = "";
+  });
+  const pmVariantPhotoInput = document.getElementById("pm-variant-photo-input");
+  document.getElementById("pm-variant-photo-btn").addEventListener("click", () => pmVariantPhotoInput.click());
+  pmVariantPhotoInput.addEventListener("change", (e) => {
+    if(e.target.files && e.target.files[0]) handleVariantPhotoUpload(e.target.files[0]);
     e.target.value = "";
   });
 
