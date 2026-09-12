@@ -357,7 +357,7 @@
   .notif-badge.hidden{ display:none; }
   .notif-dropdown{
     position:absolute; top:48px; right:0; width:320px; max-height:400px; overflow-y:auto;
-    background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--line); box-shadow:0 6px 20px rgba(0,0,0,0.18); z-index:150;
+    background:linear-gradient(165deg, rgba(255,252,244,0.85), rgba(244,238,222,0.75)); backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur); border:1px solid var(--glass-border); border-radius:12px; box-shadow:0 16px 40px rgba(90,60,20,0.22); z-index:150;
   }
   .notif-dropdown.hidden{ display:none; }
   .notif-dropdown-head{
@@ -489,11 +489,11 @@
 
   /* ---------- Task modal (shared with the product modal below) ---------- */
   #task-modal-overlay, #product-modal-overlay{
-    position:fixed; inset:0; background:rgba(26,26,24,0.65);
+    position:fixed; inset:0; background:rgba(48,36,20,0.55);
     display:flex; align-items:center; justify-content:center; z-index:1200; padding:20px;
   }
   #task-modal-overlay.hidden, #product-modal-overlay.hidden{ display:none; }
-  .task-modal{ background:linear-gradient(165deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 40%), var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur); width:100%; max-width:520px; max-height:88vh; overflow-y:auto; border:1px solid var(--glass-border); border-radius:16px; box-shadow:0 24px 70px rgba(90,60,20,0.35), 0 0 0 1px rgba(201,164,103,0.1); }
+  .task-modal{ background:linear-gradient(165deg, rgba(255,252,244,0.85), rgba(244,238,222,0.72) 55%, rgba(238,229,206,0.75)); backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur); width:100%; max-width:520px; max-height:88vh; overflow-y:auto; border:1px solid var(--glass-border); border-radius:16px; box-shadow:0 24px 70px rgba(90,60,20,0.35), 0 0 0 1px rgba(201,164,103,0.1); }
   .task-modal-head{
     display:flex; align-items:center; justify-content:space-between;
     background:var(--charcoal); color:var(--cream); padding:16px 20px;
@@ -507,8 +507,9 @@
   .tm-field{ margin-bottom:14px; }
   .tm-field label{ display:block; font-size:11px; letter-spacing:0.5px; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
   .tm-field input, .tm-field select, .tm-field textarea{
-    width:100%; font-family:inherit; font-size:13.5px; padding:8px 10px; border:1px solid var(--line); background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border-radius:8px;
+    width:100%; font-family:inherit; font-size:13.5px; padding:8px 10px; border:1px solid var(--line); background:rgba(255,255,255,0.55);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border-radius:8px;color:var(--ink);
   }
+  .tm-field input:focus, .tm-field select:focus, .tm-field textarea:focus{ outline:none; border-color:var(--gold); background:rgba(255,255,255,0.8); }
   .tm-field textarea{ min-height:70px; resize:vertical; }
   .task-modal-foot{
     display:flex; align-items:center; gap:10px; padding:14px 20px; border-top:1px solid var(--line);
