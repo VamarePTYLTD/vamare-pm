@@ -403,6 +403,10 @@
   .role-owner{ background:var(--gold-deep); }
   .role-editor{ background:var(--st-sample); }
   .role-viewer{ background:var(--st-none); }
+  .pending-pill{
+    display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase;
+    padding:2px 7px; margin-left:8px; color:#fff; background:var(--st-none);
+  }
   .signout-link{ font-size:11px; color:#8a8578; cursor:pointer; text-decoration:underline; margin-top:8px; display:inline-block; }
   .signout-link:hover{ color:#C9C4B8; }
 
@@ -963,7 +967,7 @@
     <div class="panel" id="invite-panel">
       <h3>Invite a team member</h3>
       <div class="panel-sub" style="margin-bottom:10px;">
-        Share this app's link with them and have them sign up with the email below — they'll be set to this role automatically the moment they join, instead of defaulting to viewer.
+        They'll get an email with a link to set their password and join — already assigned to the role you pick below, so there's nothing to change once they're in.
       </div>
       <div class="toolbar" style="margin-bottom:0;">
         <input type="email" id="new-invite-email" placeholder="their@email.com" style="flex:2;min-width:200px;"/>
@@ -971,9 +975,8 @@
           <option value="viewer">Viewer</option>
           <option value="editor">Editor</option>
         </select>
-        <button class="btn btn-gold" id="add-invite-btn">Add invite</button>
+        <button class="btn btn-gold" id="add-invite-btn">Send invite</button>
       </div>
-      <div id="pending-invites-list"></div>
     </div>
     <div class="panel" style="padding:0;overflow-x:auto;">
       <table id="team-table">
@@ -1104,6 +1107,27 @@ const SEED_LINE_ITEMS = [];
 ============================================================ */
 const SUPABASE_URL = "https://pzqluvxkqcnoexsavqep.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6cWx1dnhrcWNub2V4c2F2cWVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MjA0MjQsImV4cCI6MjEwNDE5NjQyNH0.IwVvyudrplt6sZjigu-hARLE2TC6H3_0nk4lLjHtKRc";
+const TEAM_ADMIN_FUNCTION_URL = SUPABASE_URL + "/functions/v1/team-admin";
+
+// Calls the team-admin Edge Function (invite / remove), which alone holds the
+// privileged service-role key needed to actually create logins and send
+// email — none of that ever touches this client-side file.
+async function callTeamAdminFunction(payload){
+  const { data: { session } } = await sb.auth.getSession();
+  if(!session) throw new Error("Your session has expired — please sign in again.");
+  const res = await fetch(TEAM_ADMIN_FUNCTION_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + session.access_token,
+      "apikey": SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json().catch(() => ({}));
+  if(!res.ok || json.error) throw new Error(json.error || ("Request failed (" + res.status + ")"));
+  return json;
+}
 const REMEMBER_PREF_KEY = "vamare-remember-pref";
 
 function buildSupabaseClient(persist){
@@ -1143,7 +1167,7 @@ let state = seedStateSafe();
 
 function seedStateSafe(){
   try{ return seedState(); }
-  catch(e){ console.error("Seeding default state failed", e); return {board:[],timelineTasks:[],phases:[],vetting:{},manufacturers:[],categories:[],lineItems:[],budget:[],notes:[],pendingInvites:[],nextIds:{board:1,manufacturer:1,budget:1,note:1,timeline:1,phase:1,category:1,lineItem:1,invite:1}}; }
+  catch(e){ console.error("Seeding default state failed", e); return {board:[],timelineTasks:[],phases:[],vetting:{},manufacturers:[],categories:[],lineItems:[],budget:[],notes:[],nextIds:{board:1,manufacturer:1,budget:1,note:1,timeline:1,phase:1,category:1,lineItem:1}}; }
 }
 
 function seedState(){
@@ -1157,8 +1181,7 @@ function seedState(){
     lineItems: SEED_LINE_ITEMS.map(p => ({...p})),
     budget: SEED_BUDGET.map(b => ({...b})),
     notes: [],
-    pendingInvites: [],
-    nextIds: {board:100, manufacturer:100, budget:100, note:1, timeline:100, phase:100, category:100, lineItem:100, invite:100},
+    nextIds: {board:100, manufacturer:100, budget:100, note:1, timeline:100, phase:100, category:100, lineItem:100},
   };
 }
 
@@ -1193,7 +1216,6 @@ function mergeWithSeed(saved){
   }
   if(Array.isArray(saved.categories)) seed.categories = saved.categories;
   if(Array.isArray(saved.lineItems)) seed.lineItems = saved.lineItems;
-  if(Array.isArray(saved.pendingInvites)) seed.pendingInvites = saved.pendingInvites;
   if(Array.isArray(saved.budget) && saved.budget.length) seed.budget = saved.budget;
   if(Array.isArray(saved.notes)) seed.notes = saved.notes;
   if(saved.nextIds) seed.nextIds = {...seed.nextIds, ...saved.nextIds};
@@ -1458,29 +1480,9 @@ async function fetchMyProfile(){
 }
 
 async function fetchTeam(){
-  const { data, error } = await sb.from("profiles").select("id,email,role,display_name,avatar_data").order("created_at", { ascending:true });
+  const { data, error } = await sb.from("profiles").select("id,email,role,display_name,avatar_data,confirmed").order("created_at", { ascending:true });
   if(error){ console.error("Could not load team list", error); teamList = []; return; }
   teamList = data;
-
-  // If someone we invited has now actually joined (and we're the owner),
-  // apply the role we promised them and clear the invite — no manual step needed.
-  if(currentRole === "owner" && state.pendingInvites && state.pendingInvites.length){
-    let changed = false;
-    for(const person of teamList){
-      const invite = state.pendingInvites.find(inv => inv.email.toLowerCase() === person.email.toLowerCase());
-      if(invite && person.role !== invite.role && person.role !== "owner"){
-        try{
-          const { error: updateErr } = await sb.from("profiles").update({ role: invite.role }).eq("id", person.id);
-          if(!updateErr){
-            person.role = invite.role;
-            state.pendingInvites = state.pendingInvites.filter(i => i.id !== invite.id);
-            changed = true;
-          }
-        }catch(e){ console.error("Could not apply invited role", e); }
-      }
-    }
-    if(changed) saveState();
-  }
 }
 
 function subscribeRealtime(){
@@ -2910,7 +2912,6 @@ function bindEvents(){
 function renderTeam(){
   const invitePanel = document.getElementById("invite-panel");
   if(invitePanel) invitePanel.classList.toggle("hidden", currentRole !== "owner");
-  renderPendingInvites();
 
   const tbody = document.getElementById("team-tbody");
   if(!tbody) return;
@@ -2919,7 +2920,8 @@ function renderTeam(){
     const tr = document.createElement("tr");
     const isYou = currentUser && person.id === currentUser.id;
     const displayName = person.display_name || person.email;
-    tr.innerHTML = `<td></td><td>${displayName}${isYou ? '<span class="you-tag">YOU</span>' : ''}<div style="font-size:11px;color:var(--muted);">${person.email}</div></td><td></td><td></td>`;
+    const pendingTag = person.confirmed === false ? '<span class="pending-pill">Pending</span>' : "";
+    tr.innerHTML = `<td></td><td>${displayName}${isYou ? '<span class="you-tag">YOU</span>' : ''}${pendingTag}<div style="font-size:11px;color:var(--muted);">${person.email}</div></td><td></td><td></td>`;
 
     const avatarTd = tr.children[0];
     const avatarEl = document.createElement("div");
@@ -2963,7 +2965,7 @@ function renderTeam(){
       const del = document.createElement("span");
       del.className = "btn-del";
       del.textContent = "×";
-      del.title = "Remove from team";
+      del.title = person.confirmed === false ? "Cancel this invite" : "Remove from team";
       del.addEventListener("click", guardOwnerOnly(() => removeTeamMember(person)));
       removeTd.appendChild(del);
     }
@@ -2972,35 +2974,7 @@ function renderTeam(){
   });
 }
 
-function renderPendingInvites(){
-  const list = document.getElementById("pending-invites-list");
-  if(!list) return;
-  if(!state.pendingInvites || state.pendingInvites.length === 0){
-    list.innerHTML = "";
-    return;
-  }
-  list.innerHTML = "";
-  state.pendingInvites.forEach(inv => {
-    const row = document.createElement("div");
-    row.className = "invite-row";
-    row.innerHTML = `
-      <span class="inv-email">${inv.email}</span>
-      <span class="inv-role">${inv.role} (pending)</span>
-    `;
-    const cancel = document.createElement("span");
-    cancel.className = "btn-del";
-    cancel.textContent = "×";
-    cancel.title = "Cancel this invite";
-    cancel.addEventListener("click", guardOwnerOnly(() => {
-      state.pendingInvites = state.pendingInvites.filter(i => i.id !== inv.id);
-      saveState(); renderPendingInvites();
-    }));
-    row.appendChild(cancel);
-    list.appendChild(row);
-  });
-}
-
-const addInvite = guardOwnerOnly(function(){
+const addInvite = guardOwnerOnly(async function(){
   const emailInput = document.getElementById("new-invite-email");
   const email = emailInput.value.trim().toLowerCase();
   if(!email) return;
@@ -3009,20 +2983,25 @@ const addInvite = guardOwnerOnly(function(){
     return;
   }
   const role = document.getElementById("new-invite-role").value;
-  const id = "inv" + (state.nextIds.invite++);
-  state.pendingInvites = state.pendingInvites || [];
-  // Adding again with a new role replaces the old pending entry for that email.
-  state.pendingInvites = state.pendingInvites.filter(i => i.email.toLowerCase() !== email);
-  state.pendingInvites.push({id, email, role});
-  emailInput.value = "";
-  saveState(); renderPendingInvites();
+  const btn = document.getElementById("add-invite-btn");
+  btn.disabled = true;
+  try{
+    await callTeamAdminFunction({ action:"invite", email, role, redirectTo: window.location.origin + window.location.pathname });
+    emailInput.value = "";
+    await fetchTeam();
+    renderTeam();
+  }catch(err){
+    alert("Couldn't send that invite: " + (err.message || "unknown error"));
+  }finally{
+    btn.disabled = currentRole !== "owner";
+  }
 });
 
 const removeTeamMember = guardOwnerOnly(async function(person){
-  if(!confirm(`Remove ${person.display_name || person.email} from the team? They'll lose access immediately if they're signed in, and would need a fresh invite to come back.`)) return;
+  const verb = person.confirmed === false ? "cancel this invite for" : "remove";
+  if(!confirm(`Are you sure you want to ${verb} ${person.display_name || person.email}? This can't be undone — they'll need a fresh invite to come back.`)) return;
   try{
-    const { error } = await sb.from("profiles").delete().eq("id", person.id);
-    if(error) throw error;
+    await callTeamAdminFunction({ action:"remove", userId: person.id });
     teamList = teamList.filter(p => p.id !== person.id);
     renderTeam();
   }catch(err){
