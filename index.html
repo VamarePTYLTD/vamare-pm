@@ -350,6 +350,8 @@
   .auth-box.is-loading .brand-lockup{ opacity:0; animation:brand-loading-fade-in 0.7s ease-out forwards; }
   .auth-box.is-loading .brand-lockup img{ height:90px; }
   .auth-box.is-loading .brand-lockup .brand-text{ font-size:36px; }
+  .auth-box.is-loading .brand-lockup::before{ top:-4px; left:31px; width:27px; height:27px; }
+  .auth-box.is-loading .brand-lockup::after{ top:51px; left:4px; width:18px; height:18px; }
   .auth-box .brand{ transition:margin-bottom 0.3s ease; }
   @keyframes brand-loading-fade-in{
     0%   { opacity:0; transform:scale(0.94); }
