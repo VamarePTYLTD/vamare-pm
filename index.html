@@ -295,6 +295,53 @@
     .board{grid-template-columns:1fr;}
   }
 
+  /* ---------- Phone-friendly overrides ---------- */
+  @media (max-width:600px){
+    html,body{overflow-x:hidden;}
+    .sidebar{padding:14px 16px;gap:8px;}
+    .brand-lockup img{height:38px;}
+    .brand-lockup .brand-text{font-size:20px;}
+    nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;gap:0;}
+    .nav-item{flex:none;white-space:nowrap;padding:10px 8px;}
+    main{padding:18px 14px 56px;max-width:100%;}
+    .page-title{font-size:21px;}
+    .page-sub{font-size:12.5px;max-width:100%;}
+    .main-topbar{flex-direction:column;align-items:stretch;gap:10px;}
+
+    .stat-row{gap:8px;}
+    .stat-card{min-width:0;flex:1 1 130px;padding:14px 16px;}
+    .stat-card .num{font-size:24px;}
+
+    .toolbar{flex-direction:column;align-items:stretch;}
+    .toolbar input[type=text],.toolbar input[type=email],.toolbar input[type=number],
+    .toolbar select,.toolbar input[type=date]{width:100%;min-width:0;}
+    .toolbar button{width:100%;}
+
+    table,.lineitem-table{display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    table th,table td{white-space:nowrap;}
+
+    .category-head{flex-direction:column;align-items:stretch;}
+    .category-head input{width:100%;min-width:0;}
+    .add-card-form{flex-direction:column;}
+    .add-card-form select,.add-card-form input{width:100%;}
+
+    .profile-row{flex-direction:column;gap:16px;}
+    .profile-fields{max-width:100%;}
+    .tm-row{flex-direction:column;gap:0;}
+    .dim-boxes{flex-direction:column;}
+    .variant-add-form .va-row{flex-direction:column;}
+
+    /* many inline-styled inputs use fixed min-width/flex; force them to stack full-width */
+    input[style*="min-width"],select[style*="min-width"]{min-width:0 !important;width:100% !important;}
+    .toolbar > *, .category-head > *{ flex:none !important; }
+
+    #task-modal-overlay,#product-modal-overlay{padding:0;align-items:flex-end;}
+    .task-modal{max-width:100%;width:100%;border-radius:16px 16px 0 0;max-height:94vh;}
+    .notif-dropdown{width:calc(100vw - 32px);right:-8px;}
+    #toast-container{max-width:calc(100vw - 32px);right:12px;}
+    .auth-box{max-width:100%;}
+  }
+
   /* ---------- Auth screen ---------- */
   #auth-screen{
     position:fixed; inset:0;
