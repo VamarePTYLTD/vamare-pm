@@ -2938,7 +2938,7 @@ function renderBudget(){
   tbody.innerHTML = "";
   state.budget.forEach(b => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td></td><td></td><td></td><td></td>`;
+    tr.innerHTML = `<td class="cell-editable"></td><td class="cell-editable"></td><td class="cell-editable"></td><td></td>`;
 
     const descInput = document.createElement("input");
     descInput.type = "text";
