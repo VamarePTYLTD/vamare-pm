@@ -955,10 +955,19 @@
     <div class="page-head">
       <h1 class="page-title">Budget</h1>
     </div>
+    <div class="panel">
+      <h3>Add a budget item</h3>
+      <div class="toolbar" style="margin-bottom:0;">
+        <input type="text" id="new-budget-desc" placeholder="Description" style="flex:2;min-width:220px;"/>
+        <input type="text" id="new-budget-planned" placeholder="Planned (AUD), e.g. $8,000 – $14,000" style="flex:1;min-width:200px;"/>
+        <input type="text" id="new-budget-committed" placeholder="Committed (AUD)" style="flex:1;min-width:140px;"/>
+        <button class="btn btn-gold" id="add-budget-btn">Add</button>
+      </div>
+    </div>
     <div class="panel" style="padding:0;overflow-x:auto;">
       <table id="budget-table">
         <thead><tr>
-          <th>Line item</th><th style="width:170px;">Planned (AUD)</th><th style="width:140px;">Committed (AUD)</th><th style="width:30px;"></th>
+          <th>Description</th><th style="width:170px;">Planned (AUD)</th><th style="width:140px;">Committed (AUD)</th><th style="width:30px;"></th>
         </tr></thead>
         <tbody id="budget-tbody"></tbody>
       </table>
@@ -969,7 +978,7 @@
         <div class="budget-total" id="budget-total-committed">$0</div>
       </div>
       <div>
-        <div class="panel-sub" style="margin-bottom:2px;">Total planned range</div>
+        <div class="panel-sub" style="margin-bottom:2px;">Total planned (AUD)</div>
         <div class="budget-total" id="budget-total-planned">–</div>
       </div>
     </div>
@@ -2929,7 +2938,29 @@ function renderBudget(){
   tbody.innerHTML = "";
   state.budget.forEach(b => {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${b.item}</td><td>${b.planned}</td><td></td><td></td>`;
+    tr.innerHTML = `<td></td><td></td><td></td><td></td>`;
+
+    const descInput = document.createElement("input");
+    descInput.type = "text";
+    descInput.value = b.item || "";
+    descInput.placeholder = "Description";
+    descInput.style.width = "100%";
+    descInput.addEventListener("change", guardEdit((e) => {
+      b.item = e.target.value.trim();
+      saveState(); renderDashboard();
+    }));
+    tr.children[0].appendChild(descInput);
+
+    const plannedInput = document.createElement("input");
+    plannedInput.type = "text";
+    plannedInput.value = b.planned || "";
+    plannedInput.placeholder = "$0";
+    plannedInput.addEventListener("change", guardEdit((e) => {
+      b.planned = e.target.value.trim();
+      saveState(); renderBudgetTotals();
+    }));
+    tr.children[1].appendChild(plannedInput);
+
     const committedInput = document.createElement("input");
     committedInput.type = "text";
     committedInput.value = b.committed ? "$" + Number(b.committed).toLocaleString() : "";
@@ -2955,12 +2986,44 @@ function renderBudget(){
   renderBudgetTotals();
 }
 
+function parsePlannedAmount(str){
+  const nums = String(str||"").match(/[\d,]+(?:\.\d+)?/g);
+  if(!nums || !nums.length) return null;
+  const vals = nums.map(n => Number(n.replace(/,/g,""))).filter(n => !isNaN(n));
+  if(!vals.length) return null;
+  return { low: Math.min(...vals), high: Math.max(...vals) };
+}
+
 function renderBudgetTotals(){
   const committed = state.budget.reduce((s,b) => s + (Number(b.committed)||0), 0);
   document.getElementById("budget-total-committed").textContent = "$" + committed.toLocaleString();
-  document.getElementById("budget-total-planned").textContent =
-    state.budget.length ? "See line items above" : "–";
+
+  let low = 0, high = 0, any = false;
+  state.budget.forEach(b => {
+    const parsed = parsePlannedAmount(b.planned);
+    if(parsed){ low += parsed.low; high += parsed.high; any = true; }
+  });
+  const plannedEl = document.getElementById("budget-total-planned");
+  if(!any){ plannedEl.textContent = "–"; }
+  else if(low === high){ plannedEl.textContent = "$" + low.toLocaleString(); }
+  else { plannedEl.textContent = "$" + low.toLocaleString() + " – $" + high.toLocaleString(); }
 }
+
+const addBudgetItem = guardEdit(function(){
+  const desc = document.getElementById("new-budget-desc").value.trim();
+  const planned = document.getElementById("new-budget-planned").value.trim();
+  const committedRaw = document.getElementById("new-budget-committed").value.trim();
+  if(!desc) return;
+  const committed = Number(committedRaw.replace(/[^0-9.]/g,"")) || 0;
+  state.budget.push({
+    id: "bg" + (state.nextIds.budget++),
+    item: desc,
+    planned: planned || "–",
+    committed: committed,
+  });
+  ["new-budget-desc","new-budget-planned","new-budget-committed"].forEach(i => document.getElementById(i).value = "");
+  saveState(); renderBudget(); renderDashboard();
+});
 
 /* ============================================================
    NOTES
@@ -3015,6 +3078,10 @@ function bindEvents(){
   document.getElementById("add-category-btn").addEventListener("click", addCategory);
   document.getElementById("new-category-name").addEventListener("keydown", (e) => { if(e.key==="Enter") addCategory(); });
   document.getElementById("add-note-btn").addEventListener("click", addNote);
+  document.getElementById("add-budget-btn").addEventListener("click", addBudgetItem);
+  ["new-budget-desc","new-budget-planned","new-budget-committed"].forEach(id => {
+    document.getElementById(id).addEventListener("keydown", (e) => { if(e.key==="Enter") addBudgetItem(); });
+  });
 
   document.getElementById("export-btn").addEventListener("click", exportData);
   const importFileInput = document.getElementById("import-file");
