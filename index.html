@@ -1711,6 +1711,17 @@ async function onLoggedIn(user){
   loadNotificationHistory();
   renderNotifBell();
   startReminderChecks();
+
+  // Deep-link support: an email reminder's "Open Vamaré PM" button links to
+  // ?task=<id>, so on login, jump straight to that task if present.
+  const deepLinkTaskId = new URLSearchParams(window.location.search).get("task");
+  if(deepLinkTaskId){
+    switchTab("board");
+    setTimeout(() => openTaskModal(deepLinkTaskId), 50);
+    // Clean the URL so refreshing/sharing later doesn't keep re-opening it.
+    const cleanUrl = window.location.pathname + window.location.hash;
+    window.history.replaceState({}, "", cleanUrl);
+  }
 }
 
 function applyRolePermissions(){
