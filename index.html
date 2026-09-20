@@ -608,12 +608,17 @@
   }
   .add-task-trigger:hover{ border-color:var(--gold-deep); color:var(--gold-deep); }
 
-  /* ---------- Priority dots ---------- */
+  /* ---------- Priority dots + badges ---------- */
   .priority-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; flex:none; }
   .priority-none{ background:var(--st-none); }
   .priority-low{ background:var(--st-approved); }
   .priority-medium{ background:var(--gold-deep); }
   .priority-high{ background:var(--st-rejected); }
+  .priority-badge{ display:inline-block; font-size:10px; font-weight:700; color:#fff; padding:2px 8px; border-radius:20px; letter-spacing:0.2px; }
+  .priority-badge.priority-low{ background:var(--st-approved); }
+  .priority-badge.priority-medium{ background:var(--gold-deep); }
+  .priority-badge.priority-high{ background:var(--st-rejected); }
+  .priority-badge.hidden{ display:none; }
   .card-meta-row{ display:flex; align-items:center; gap:6px; margin-top:5px; flex-wrap:wrap; }
   .card-due-badge{ font-size:10px; color:var(--muted); background:rgba(173,136,80,0.14); padding:2px 6px; }
   .card-due-badge.overdue{ color:#fff; background:var(--st-rejected); }
@@ -1032,7 +1037,7 @@
             </select>
           </div>
           <div class="tm-field">
-            <label>Priority</label>
+            <label>Priority <span id="tm-priority-badge" class="priority-badge hidden" style="margin-left:6px;"></span></label>
             <select id="tm-priority">
               <option value="none">None</option>
               <option value="low">Low</option>
@@ -1983,7 +1988,9 @@ function makeCard(t){
   card.dataset.id = t.id;
 
   const priority = t.priority || "none";
-  let metaRowHtml = `<span class="priority-dot priority-${priority}" title="${priorityLabel(priority)} priority"></span>`;
+  let metaRowHtml = priority !== "none"
+    ? `<span class="priority-badge priority-${priority}">${priorityLabel(priority)}</span>`
+    : "";
   const due = formatDueBadge(t);
   if(due) metaRowHtml += `<span class="card-due-badge${due.overdue ? " overdue" : ""}">${due.text}</span>`;
   if(t.assignedTo){
@@ -2029,6 +2036,17 @@ function populateAssigneeOptions(){
   sel.value = current;
 }
 
+function updateTmPriorityBadge(){
+  const val = document.getElementById("tm-priority").value;
+  const badge = document.getElementById("tm-priority-badge");
+  if(val === "none"){
+    badge.classList.add("hidden");
+    return;
+  }
+  badge.className = "priority-badge priority-" + val;
+  badge.textContent = priorityLabel(val);
+}
+
 function openTaskModal(taskId){
   populateAssigneeOptions();
   editingTaskId = taskId;
@@ -2040,6 +2058,7 @@ function openTaskModal(taskId){
   document.getElementById("tm-due-time").value = task ? (task.dueTime || "") : "";
   document.getElementById("tm-reminder").value = task ? (task.reminder || "none") : "at_due";
   document.getElementById("tm-priority").value = task ? (task.priority || "none") : "none";
+  updateTmPriorityBadge();
   document.getElementById("tm-workstream").value = task ? task.workstream : "Design";
   document.getElementById("tm-assigned").value = task ? (task.assignedTo || "") : "";
   document.getElementById("tm-column").value = task ? task.column : "todo";
@@ -2123,8 +2142,8 @@ function checkReminders(){
       const due = new Date(t.dueDate + "T" + (t.dueTime || "00:00"));
       const timeStr = t.dueTime ? due.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" }) : "";
       const bodyText = "Due " + due.toLocaleDateString(undefined,{month:"short",day:"numeric"}) + (timeStr ? " · " + timeStr : "");
-      showToast(t.title, bodyText);
-      addNotification(t.title, bodyText, t.id);
+      showToast(t.title, bodyText, t.priority);
+      addNotification(t.title, bodyText, t.id, t.priority);
       playBellSound();
       t.reminderFired = true;
       changed = true;
@@ -2158,10 +2177,10 @@ function saveNotificationHistory(){
   try{ window.localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(notificationHistory)); }catch(e){}
 }
 
-function addNotification(title, body, taskId){
+function addNotification(title, body, taskId, priority){
   notificationHistory.unshift({
     id: "n" + Date.now() + Math.random().toString(36).slice(2,7),
-    title, body, taskId,
+    title, body, taskId, priority: priority || "none",
     createdAt: new Date().toISOString(),
     read: false,
   });
@@ -2208,9 +2227,12 @@ function renderNotifDropdown(){
     const when = new Date(n.createdAt);
     const timeStr = when.toLocaleDateString(undefined,{month:"short",day:"numeric"}) + " · " +
       when.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+    const badgeHtml = (n.priority && n.priority !== "none")
+      ? `<span class="priority-badge priority-${n.priority}" style="margin-left:6px;">${priorityLabel(n.priority)}</span>`
+      : "";
     item.innerHTML = `
       <span class="notif-item-clear" title="Clear this notification" data-always-enabled="true">&times;</span>
-      <div class="notif-item-title">${n.title}</div>
+      <div class="notif-item-title">${n.title}${badgeHtml}</div>
       <div class="notif-item-body">${n.body}</div>
       <div class="notif-item-time">${timeStr}</div>
     `;
@@ -2239,14 +2261,17 @@ function toggleNotifDropdown(forceState){
   if(show) renderNotifDropdown();
 }
 
-function showToast(title, body){
+function showToast(title, body, priority){
   const container = document.getElementById("toast-container");
   if(!container) return;
   const toast = document.createElement("div");
   toast.className = "toast";
+  const badgeHtml = (priority && priority !== "none")
+    ? `<span class="priority-badge priority-${priority}" style="margin-left:6px;">${priorityLabel(priority)}</span>`
+    : "";
   toast.innerHTML = `
     <span class="toast-close">&times;</span>
-    <div class="toast-title">${title}</div>
+    <div class="toast-title">${title}${badgeHtml}</div>
     <div class="toast-body">${body}</div>
   `;
   toast.querySelector(".toast-close").addEventListener("click", () => toast.remove());
@@ -3121,6 +3146,7 @@ function bindEvents(){
 
   // Task modal
   document.getElementById("task-modal-close").addEventListener("click", closeTaskModal);
+  document.getElementById("tm-priority").addEventListener("change", updateTmPriorityBadge);
   document.getElementById("tm-cancel-btn").addEventListener("click", closeTaskModal);
   document.getElementById("tm-save-btn").addEventListener("click", saveTaskFromModal);
   document.getElementById("tm-delete-btn").addEventListener("click", deleteTaskFromModal);
