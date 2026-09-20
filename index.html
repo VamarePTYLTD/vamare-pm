@@ -1311,6 +1311,7 @@ let sb = buildSupabaseClient(getRememberPref());
 
 let currentUser = null;   // { id, email }
 let currentRole = "viewer"; // "owner" | "editor" | "viewer" — least-privilege default
+let onLoggedInStarted = false; // guards against onLoggedIn() running twice — see onLoggedIn()
 let teamList = [];         // [{id, email, role}], populated after login
 
 // State is seeded synchronously at script load time so the app is never in a
@@ -1695,6 +1696,17 @@ function renderWhoAmI(){
 }
 
 async function onLoggedIn(user){
+  // Reentrancy guard: initAuth()'s direct getSession() check and the
+  // onAuthStateChange SIGNED_IN event can both resolve around the same
+  // moment on load, and each used to call this independently — running the
+  // whole login sequence twice (double bindEvents(), double checkReminders(),
+  // etc). That caused the bell's click handler to fire twice per click
+  // (looking unclickable) and due-task reminders to fire twice (duplicate
+  // notifications). Setting this synchronously, before any await, closes
+  // the race regardless of which path gets there first.
+  if(onLoggedInStarted) return;
+  onLoggedInStarted = true;
+
   currentUser = { id: user.id, email: user.email };
   currentRole = await fetchMyProfile();
   await fetchTeam();
