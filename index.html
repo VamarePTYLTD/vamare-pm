@@ -1486,7 +1486,9 @@ function mergeWithSeed(saved){
   if(Array.isArray(saved.manufacturers)){
     const byId = Object.fromEntries(saved.manufacturers.map(m=>[m.id,m]));
     const extra = saved.manufacturers.filter(m => !seed.manufacturers.some(s=>s.id===m.id));
-    seed.manufacturers = seed.manufacturers.map(m => ({
+    const deleted = new Set(Array.isArray(saved.deletedMfgIds) ? saved.deletedMfgIds : []);
+    seed.deletedMfgIds = [...deleted];
+    seed.manufacturers = seed.manufacturers.filter(m => !deleted.has(m.id)).map(m => ({
       ...m,
       status: byId[m.id]?.status || m.status,
       notes: byId[m.id]?.notes ?? m.notes,
@@ -2761,7 +2763,12 @@ function renderManufacturers(){
 
       const del = document.createElement("span");
       del.className = "btn-del"; del.textContent = "×"; del.title = "Remove";
-      del.addEventListener("click", guardEdit(() => {
+      del.addEventListener("click", guardEdit(async () => {
+        if(!confirm('Remove "' + m.name + '" from the list? Its notes and attachments will be deleted too.')) return;
+        const paths = (m.entries || []).flatMap(en => (en.files || []).map(f => f.path));
+        if(paths.length){ try{ await sb.storage.from(MFG_BUCKET).remove(paths); }catch(e){ console.error(e); } }
+        // Remember the id so the built-in seed list can't bring it back on the next load/sync.
+        state.deletedMfgIds = (state.deletedMfgIds || []).concat([m.id]);
         state.manufacturers = state.manufacturers.filter(x => x.id !== m.id);
         saveState(); renderManufacturers(); renderDashboard();
       }));
