@@ -842,11 +842,12 @@
         <input type="text" id="new-mfg-location" placeholder="Location" style="flex:1;min-width:120px;"/>
         <input type="text" id="new-mfg-specialty" placeholder="Specialty" style="flex:2;min-width:180px;"/>
         <input type="text" id="new-mfg-url" placeholder="Website (https://…)" style="flex:1;min-width:160px;"/>
+        <input type="email" id="new-mfg-email" placeholder="Email address" style="flex:1;min-width:180px;"/>
         <button class="btn btn-gold" id="add-mfg-btn">Add</button>
       </div>
     </div>
     <div class="toolbar">
-      <input type="text" id="mfg-search" placeholder="Search name, location, specialty…" data-always-enabled="true" />
+      <input type="text" id="mfg-search" placeholder="Search name, location, specialty, email…" data-always-enabled="true" />
       <select id="mfg-group-filter" data-always-enabled="true"><option value="">All groups</option></select>
       <select id="mfg-status-filter" data-always-enabled="true">
         <option value="">All statuses</option>
@@ -859,7 +860,7 @@
       <table id="mfg-table">
         <thead><tr>
           <th style="width:190px;">Manufacturer</th><th style="width:150px;">Location</th><th>Specialty</th>
-          <th style="width:110px;">MOQ</th><th style="width:160px;">Status</th><th style="width:220px;">Notes</th><th style="width:30px;"></th>
+          <th style="width:110px;">MOQ</th><th style="width:210px;">Email</th><th style="width:160px;">Status</th><th style="width:220px;">Notes</th><th style="width:30px;"></th>
         </tr></thead>
         <tbody id="mfg-tbody"></tbody>
       </table>
@@ -1405,7 +1406,7 @@ function seedState(){
     phases: SEED_PHASES.map(p => ({...p})),
     timelineTasks: SEED_TIMELINE_TASKS.map(t => ({...t, done:false})),
     vetting: Object.fromEntries(SEED_VETTING.map(v => [v.id, false])),
-    manufacturers: SEED_MANUFACTURERS.map(m => ({...m, status:"Not Contacted", notes:""})),
+    manufacturers: SEED_MANUFACTURERS.map(m => ({...m, status:"Not Contacted", notes:"", email:""})),
     categories: SEED_CATEGORIES.map(c => ({...c})),
     lineItems: SEED_LINE_ITEMS.map(p => ({...p})),
     budget: SEED_BUDGET.map(b => ({...b})),
@@ -1441,6 +1442,7 @@ function mergeWithSeed(saved){
       ...m,
       status: byId[m.id]?.status || m.status,
       notes: byId[m.id]?.notes ?? m.notes,
+      email: byId[m.id]?.email ?? m.email ?? "",
     })).concat(extra);
   }
   if(Array.isArray(saved.categories)) seed.categories = saved.categories;
@@ -2641,7 +2643,7 @@ function renderManufacturers(){
       if(m.group !== g) return false;
       if(statusFilter && m.status !== statusFilter) return false;
       if(search){
-        const hay = (m.name+" "+m.location+" "+m.specialty).toLowerCase();
+        const hay = (m.name+" "+m.location+" "+m.specialty+" "+(m.email||"")).toLowerCase();
         if(!hay.includes(search)) return false;
       }
       return true;
@@ -2650,7 +2652,7 @@ function renderManufacturers(){
 
     const groupTr = document.createElement("tr");
     groupTr.className = "group-row";
-    groupTr.innerHTML = `<td colspan="7">${g} (${rows.length})</td>`;
+    groupTr.innerHTML = `<td colspan="8">${g} (${rows.length})</td>`;
     tbody.appendChild(groupTr);
 
     rows.forEach(m => {
@@ -2659,8 +2661,17 @@ function renderManufacturers(){
       tr.innerHTML = `
         <td><a class="link" href="${m.url}" target="_blank" rel="noopener">${m.name}</a></td>
         <td>${m.location}</td><td>${m.specialty}</td><td>${m.moq}</td>
-        <td></td><td class="cell-notes"></td><td></td>
+        <td class="cell-notes"></td><td></td><td class="cell-notes"></td><td></td>
       `;
+      const emailInput = document.createElement("input");
+      emailInput.type = "email"; emailInput.placeholder = "Add email…"; emailInput.value = m.email || "";
+      emailInput.addEventListener("change", guardEdit((e) => {
+        const v = e.target.value.trim();
+        if(v && !EMAIL_RE.test(v)){ alert("Please enter a valid email address."); e.target.value = m.email || ""; return; }
+        m.email = v; e.target.value = v; saveState();
+      }));
+      tr.children[4].appendChild(emailInput);
+
       const select = document.createElement("select");
       select.className = "status-select " + statusClass(m.status);
       ["Not Contacted","RFQ Sent","Sample Requested","Sample Approved","Rejected"].forEach(opt => {
@@ -2674,12 +2685,12 @@ function renderManufacturers(){
         select.className = "status-select " + statusClass(m.status);
         saveState(); renderDashboard();
       }));
-      tr.children[4].appendChild(select);
+      tr.children[5].appendChild(select);
 
       const input = document.createElement("input");
       input.type = "text"; input.placeholder = "Add a note…"; input.value = m.notes || "";
       input.addEventListener("change", guardEdit((e) => { m.notes = e.target.value; saveState(); }));
-      tr.children[5].appendChild(input);
+      tr.children[6].appendChild(input);
 
       const del = document.createElement("span");
       del.className = "btn-del"; del.textContent = "×"; del.title = "Remove";
@@ -2687,7 +2698,7 @@ function renderManufacturers(){
         state.manufacturers = state.manufacturers.filter(x => x.id !== m.id);
         saveState(); renderManufacturers(); renderDashboard();
       }));
-      tr.children[6].appendChild(del);
+      tr.children[7].appendChild(del);
 
       tbody.appendChild(tr);
     });
@@ -2695,15 +2706,18 @@ function renderManufacturers(){
   document.getElementById("mfg-count-pill").textContent = `Showing ${shown} of ${state.manufacturers.length}`;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const addManufacturer = guardEdit(function(){
   const name = document.getElementById("new-mfg-name").value.trim();
   if(!name) return;
   const location = document.getElementById("new-mfg-location").value.trim() || "—";
   const specialty = document.getElementById("new-mfg-specialty").value.trim() || "—";
   const url = document.getElementById("new-mfg-url").value.trim() || "#";
+  const email = document.getElementById("new-mfg-email").value.trim();
+  if(email && !EMAIL_RE.test(email)){ alert("Please enter a valid email address."); return; }
   const id = "m" + (state.nextIds.manufacturer++);
-  state.manufacturers.push({id, group:"Custom Additions", name, location, specialty, moq:"—", url, status:"Not Contacted", notes:""});
-  ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url"].forEach(i => document.getElementById(i).value = "");
+  state.manufacturers.push({id, group:"Custom Additions", name, location, specialty, moq:"—", url, email, status:"Not Contacted", notes:""});
+  ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url","new-mfg-email"].forEach(i => document.getElementById(i).value = "");
   populateGroupFilter();
   saveState(); renderManufacturers(); renderDashboard();
 });
@@ -3286,7 +3300,7 @@ function bindEvents(){
   });
 
   // Enter-to-submit on the small text inputs, for convenience
-  ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url"].forEach(id => {
+  ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url","new-mfg-email"].forEach(id => {
     document.getElementById(id).addEventListener("keydown", (e) => { if(e.key==="Enter") addManufacturer(); });
   });
 
