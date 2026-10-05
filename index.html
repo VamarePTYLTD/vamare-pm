@@ -879,6 +879,7 @@
         <input type="text" id="new-mfg-url" placeholder="Website (https://…)" style="flex:1;min-width:160px;"/>
         <input type="email" id="new-mfg-email" placeholder="Email address" style="flex:1;min-width:180px;"/>
         <div style="flex-basis:100%;height:0;"></div>
+        <select id="new-mfg-group" title="Group" style="min-width:210px;"></select>
         <button type="button" class="cpick-btn" id="new-mfg-phone-iso" style="min-width:100px;"></button>
         <input type="tel" id="new-mfg-phone" placeholder="Phone number" style="flex:0 1 240px;min-width:160px;"/>
         <button class="btn btn-gold" id="add-mfg-btn">Add</button>
@@ -2678,6 +2679,15 @@ function populateGroupFilter(){
     opt.value = g; opt.textContent = g;
     sel.appendChild(opt);
   });
+  // Group picker in the "Add a manufacturer" form (keeps the current choice).
+  const addSel = document.getElementById("new-mfg-group");
+  if(addSel){
+    const prev = addSel.value || "Custom Additions";
+    addSel.innerHTML = "";
+    const all = groups.filter(g => g !== "Custom Additions").concat(["Custom Additions"]);
+    all.forEach(g => { const o = document.createElement("option"); o.value = g; o.textContent = g; addSel.appendChild(o); });
+    addSel.value = all.includes(prev) ? prev : "Custom Additions";
+  }
 }
 
 function renderManufacturers(){
@@ -3132,7 +3142,13 @@ function renderMfgModal(){
 
   const grid = document.createElement("div"); grid.className = "mfgm-grid"; body.appendChild(grid);
   mfgField(grid, "Name", m.name, {onSave:(v,el) => { if(!v){ el.value = m.name; return; } m.name = v; document.getElementById("mfgm-title").textContent = v; saveState(); }});
-  const g = mfgField(grid, "Group", m.group); g.input.disabled = true; g.input.dataset.alwaysEnabled = "true";
+  const gWrap = document.createElement("div"); gWrap.className = "mfgm-field";
+  gWrap.innerHTML = '<label>Group</label>';
+  const gSel = document.createElement("select");
+  const gAll = [...new Set(state.manufacturers.map(x => x.group).concat(["Custom Additions"]))];
+  gAll.forEach(gr => { const o = document.createElement("option"); o.value = gr; o.textContent = gr; if(gr === m.group) o.selected = true; gSel.appendChild(o); });
+  gSel.addEventListener("change", guardEdit(e => { m.group = e.target.value; saveState(); populateGroupFilter(); }));
+  gWrap.appendChild(gSel); grid.appendChild(gWrap);
   mfgField(grid, "Location", m.location, {onSave:v => { m.location = v || "—"; saveState(); }});
   mfgField(grid, "MOQ", m.moq, {onSave:v => { m.moq = v || "—"; saveState(); }});
   mfgField(grid, "Specialty", m.specialty, {wide:true, onSave:v => { m.specialty = v || "—"; saveState(); }});
@@ -3274,7 +3290,7 @@ const addManufacturer = guardEdit(function(){
   if(phone && !phoneValid(phone)){ alert("Please enter a valid phone number (digits, spaces, dashes or brackets only, without the country code)."); return; }
   const phoneIso = document.getElementById("new-mfg-phone-iso").dataset.iso || DEFAULT_PHONE_ISO;
   const id = "m" + (state.nextIds.manufacturer++);
-  state.manufacturers.push({id, group:"Custom Additions", name, location, specialty, moq:"—", url, email, phoneIso, phone, entries:[], status:"Not Contacted", notes:""});
+  state.manufacturers.push({id, group: (document.getElementById("new-mfg-group").value || "Custom Additions"), name, location, specialty, moq:"—", url, email, phoneIso, phone, entries:[], status:"Not Contacted", notes:""});
   ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url","new-mfg-email","new-mfg-phone"].forEach(i => document.getElementById(i).value = "");
   populateGroupFilter();
   saveState(); renderManufacturers(); renderDashboard();
