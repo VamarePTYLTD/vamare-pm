@@ -162,7 +162,7 @@
 
   /* ---------- Toolbar / forms ---------- */
   .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;}
-  .toolbar input[type=text], .toolbar input[type=email], .toolbar input[type=number], .toolbar select, .toolbar input[type=date]{
+  .toolbar input[type=text], .toolbar input[type=email], .toolbar input[type=tel], .toolbar input[type=number], .toolbar select, .toolbar input[type=date]{
     font-family:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);color:var(--ink);border-radius:8px;
   }
   .toolbar input[type=text]{flex:1;min-width:160px;}
@@ -197,9 +197,12 @@
   .cell-notes input, .cell-editable input{
     width:100%;font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--line);background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
   }
-  .phone-cell{display:flex;gap:4px;}
-  .cpick-btn{font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--line);background:var(--glass);cursor:pointer;white-space:nowrap;color:inherit;text-align:left;}
-  .phone-cell .cpick-btn{flex:0 0 92px;}
+  .phone-cell{display:flex;gap:6px;}
+  .cpick-btn{font-family:inherit;font-size:13.5px;padding:9px 10px;border:1px solid var(--line);background:var(--glass);cursor:pointer;white-space:nowrap;color:inherit;text-align:left;}
+  .phone-cell .cpick-btn{flex:0 0 108px;}
+  #mfg-table{min-width:1750px;}
+  #mfg-table .cell-notes input{font-size:13.5px;padding:9px 10px;}
+  #mfg-table td{vertical-align:middle;}
   .cpick-pop{position:fixed;z-index:10000;width:262px;max-height:300px;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);box-shadow:0 12px 32px rgba(40,30,10,0.22);border-radius:8px;overflow:hidden;}
   .cpick-search{border:none;border-bottom:1px solid var(--line);padding:10px 12px;font-family:inherit;font-size:13px;outline:none;}
   .cpick-list{list-style:none;margin:0;padding:0;overflow-y:auto;flex:1;}
@@ -324,7 +327,7 @@
     .stat-card .num{font-size:24px;}
 
     .toolbar{flex-direction:column;align-items:stretch;}
-    .toolbar input[type=text],.toolbar input[type=email],.toolbar input[type=number],
+    .toolbar input[type=text],.toolbar input[type=email],.toolbar input[type=tel],.toolbar input[type=number],
     .toolbar select,.toolbar input[type=date]{width:100%;min-width:0;}
     .toolbar button{width:100%;}
 
@@ -595,11 +598,31 @@
   .profile-saved-tag.show{ opacity:1; }
 
   /* ---------- Task modal (shared with the product modal below) ---------- */
-  #task-modal-overlay, #product-modal-overlay, #task-view-modal-overlay{
+  #task-modal-overlay, #product-modal-overlay, #task-view-modal-overlay, #mfg-modal-overlay{
     position:fixed; inset:0; background:rgba(48,36,20,0.55);
     display:flex; align-items:center; justify-content:center; z-index:1200; padding:20px;
   }
-  #task-modal-overlay.hidden, #product-modal-overlay.hidden, #task-view-modal-overlay.hidden{ display:none; }
+  #task-modal-overlay.hidden, #product-modal-overlay.hidden, #task-view-modal-overlay.hidden, #mfg-modal-overlay.hidden{ display:none; }
+  .mfg-modal{ max-width:820px !important; }
+  .mfgm-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;margin-bottom:8px;}
+  .mfgm-field{display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .mfgm-field.wide{grid-column:1 / -1;}
+  .mfgm-field label{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gold-deep);}
+  .mfgm-field input[type=text],.mfgm-field input[type=email],.mfgm-field input[type=tel],.mfgm-field input[type=url],.mfgm-field select,.mfgm-field textarea{width:100%;font-family:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line);background:var(--glass);box-sizing:border-box;}
+  .mfgm-phone{display:flex;gap:6px;}
+  .mfgm-phone input{flex:1;min-width:0;}
+  .mfgm-section{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);}
+  .mfgm-section h4{margin:0 0 10px;font-size:14px;}
+  .mfgm-entry{background:var(--glass);border:1px solid var(--line);padding:10px 12px;margin-bottom:10px;border-radius:8px;}
+  .mfgm-entry-head{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#7a7160;margin-bottom:6px;}
+  .mfgm-entry-text{white-space:pre-wrap;font-size:14px;word-break:break-word;}
+  .mfgm-files{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .mfgm-chip{font-family:inherit;font-size:12.5px;padding:5px 10px;border:1px solid var(--line);background:#fff;cursor:pointer;border-radius:999px;}
+  .mfgm-chip:hover{background:rgba(201,164,103,0.2);}
+  .mfgm-del{cursor:pointer;color:#a33;font-size:12px;background:none;border:none;font-family:inherit;}
+  .mfgm-links{display:flex;gap:14px;font-size:13px;margin-bottom:10px;}
+  .mfgm-pending{font-size:12.5px;color:#7a7160;margin:6px 0;}
+  @media (max-width:600px){ .mfgm-grid{grid-template-columns:1fr;} }
   .task-modal{ background:linear-gradient(165deg, rgba(255,252,244,0.85), rgba(244,238,222,0.72) 55%, rgba(238,229,206,0.75)); backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur); width:100%; max-width:520px; max-height:88vh; overflow-y:auto; border:1px solid var(--glass-border); border-radius:16px; box-shadow:0 24px 70px rgba(90,60,20,0.35), 0 0 0 1px rgba(201,164,103,0.1); }
   .task-modal-head{
     display:flex; align-items:center; justify-content:space-between;
@@ -855,7 +878,7 @@
         <input type="text" id="new-mfg-url" placeholder="Website (https://…)" style="flex:1;min-width:160px;"/>
         <input type="email" id="new-mfg-email" placeholder="Email address" style="flex:1;min-width:180px;"/>
         <button type="button" class="cpick-btn" id="new-mfg-phone-iso" style="min-width:100px;"></button>
-        <input type="tel" id="new-mfg-phone" placeholder="Phone number" style="flex:1;min-width:140px;"/>
+        <input type="tel" id="new-mfg-phone" placeholder="Phone number" style="flex:0 1 240px;min-width:160px;"/>
         <button class="btn btn-gold" id="add-mfg-btn">Add</button>
       </div>
     </div>
@@ -872,8 +895,8 @@
     <div class="panel" style="padding:0;overflow-x:auto;">
       <table id="mfg-table">
         <thead><tr>
-          <th style="width:190px;">Manufacturer</th><th style="width:150px;">Location</th><th>Specialty</th>
-          <th style="width:110px;">MOQ</th><th style="width:210px;">Email</th><th style="width:250px;">Phone</th><th style="width:160px;">Status</th><th style="width:220px;">Notes</th><th style="width:30px;"></th>
+          <th style="width:210px;">Manufacturer</th><th style="width:160px;">Location</th><th style="min-width:220px;">Specialty</th>
+          <th style="width:110px;">MOQ</th><th style="width:280px;">Email</th><th style="width:330px;">Phone</th><th style="width:170px;">Status</th><th style="width:230px;">Notes</th><th style="width:130px;"></th>
         </tr></thead>
         <tbody id="mfg-tbody"></tbody>
       </table>
@@ -1122,6 +1145,16 @@
   </div>
 
   <!-- TASK VIEW MODAL (read-only — this is what an email reminder link opens) -->
+  <div id="mfg-modal-overlay" class="hidden">
+    <div class="task-modal mfg-modal">
+      <div class="task-modal-head">
+        <h3 id="mfgm-title">Manufacturer</h3>
+        <span class="task-modal-close" id="mfg-modal-close" data-always-enabled="true">&times;</span>
+      </div>
+      <div class="task-modal-body" id="mfgm-body"></div>
+    </div>
+  </div>
+
   <div id="task-view-modal-overlay" class="hidden">
     <div class="task-modal">
       <div class="task-modal-head">
@@ -1419,7 +1452,7 @@ function seedState(){
     phases: SEED_PHASES.map(p => ({...p})),
     timelineTasks: SEED_TIMELINE_TASKS.map(t => ({...t, done:false})),
     vetting: Object.fromEntries(SEED_VETTING.map(v => [v.id, false])),
-    manufacturers: SEED_MANUFACTURERS.map(m => ({...m, status:"Not Contacted", notes:"", email:"", phoneIso:"CN", phone:""})),
+    manufacturers: SEED_MANUFACTURERS.map(m => ({...m, status:"Not Contacted", notes:"", email:"", phoneIso:"CN", phone:"", entries:[]})),
     categories: SEED_CATEGORIES.map(c => ({...c})),
     lineItems: SEED_LINE_ITEMS.map(p => ({...p})),
     budget: SEED_BUDGET.map(b => ({...b})),
@@ -1458,6 +1491,7 @@ function mergeWithSeed(saved){
       email: byId[m.id]?.email ?? m.email ?? "",
       phoneIso: byId[m.id]?.phoneIso ?? m.phoneIso ?? "CN",
       phone: byId[m.id]?.phone ?? m.phone ?? "",
+      entries: byId[m.id]?.entries ?? m.entries ?? [],
     })).concat(extra);
   }
   if(Array.isArray(saved.categories)) seed.categories = saved.categories;
@@ -2674,7 +2708,7 @@ function renderManufacturers(){
       shown++;
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td><a class="link" href="${m.url}" target="_blank" rel="noopener">${m.name}</a></td>
+        <td><a class="link mfg-open" href="#"></a> <a class="mfg-ext" href="${m.url}" target="_blank" rel="noopener" title="Open website" style="text-decoration:none;">↗</a></td>
         <td>${m.location}</td><td>${m.specialty}</td><td>${m.moq}</td>
         <td class="cell-notes"></td><td class="cell-notes"><div class="phone-cell"></div></td><td></td><td class="cell-notes"></td><td></td>
       `;
@@ -2686,6 +2720,10 @@ function renderManufacturers(){
         m.email = v; e.target.value = v; saveState();
       }));
       tr.children[4].appendChild(emailInput);
+
+      const nameLink = tr.querySelector(".mfg-open");
+      nameLink.textContent = m.name;
+      nameLink.addEventListener("click", (e) => { e.preventDefault(); openMfgModal(m.id); });
 
       const phoneSel = document.createElement("button");
       makeCountryPicker(phoneSel, m.phoneIso, guardEdit((iso) => { m.phoneIso = iso; saveState(); }));
@@ -2725,6 +2763,14 @@ function renderManufacturers(){
         state.manufacturers = state.manufacturers.filter(x => x.id !== m.id);
         saveState(); renderManufacturers(); renderDashboard();
       }));
+      const openBtn = document.createElement("button");
+      openBtn.type = "button"; openBtn.className = "btn"; openBtn.dataset.alwaysEnabled = "true";
+      openBtn.style.cssText = "padding:5px 10px;font-size:12px;margin-right:8px;";
+      const nEnt = (m.entries||[]).length;
+      openBtn.textContent = "Open" + (nEnt ? " (" + nEnt + ")" : "");
+      openBtn.title = "View and edit this manufacturer, notes and attachments";
+      openBtn.addEventListener("click", () => openMfgModal(m.id));
+      tr.children[8].appendChild(openBtn);
       tr.children[8].appendChild(del);
 
       tbody.appendChild(tr);
@@ -3036,6 +3082,176 @@ function makeCountryPicker(btn, iso, onPick){
 }
 function phoneValid(v){ return /^[0-9 ()\-.]+$/.test(v) && v.replace(/\D/g,"").length >= 5 && v.replace(/\D/g,"").length <= 14; }
 function phoneDigits(m){ const c = COUNTRY_CODES.find(x => x.iso === m.phoneIso); return m.phone ? ((c?c.code:"") + " " + m.phone) : ""; }
+
+// ---------- Manufacturer detail window (details + notes thread + attachments) ----------
+let viewingMfgId = null;
+const MFG_BUCKET = "manufacturer-files";
+const MFG_MAX_FILE = 15 * 1024 * 1024;
+function fmtFileSize(b){ return b < 1024 ? b + " B" : b < 1048576 ? Math.round(b/1024) + " KB" : (b/1048576).toFixed(1) + " MB"; }
+function myDisplayName(){ return (myProfile && myProfile.display_name) || (currentUser && currentUser.email) || "Someone"; }
+function getMfg(id){ return state.manufacturers.find(x => x.id === id); }
+
+function mfgField(grid, label, value, opts){
+  opts = opts || {};
+  const wrap = document.createElement("div");
+  wrap.className = "mfgm-field" + (opts.wide ? " wide" : "");
+  const lab = document.createElement("label"); lab.textContent = label; wrap.appendChild(lab);
+  const input = document.createElement("input");
+  input.type = opts.type || "text"; input.value = value || ""; input.placeholder = opts.placeholder || "";
+  if(opts.onSave) input.addEventListener("change", guardEdit((e) => opts.onSave(e.target.value.trim(), e.target)));
+  wrap.appendChild(input); grid.appendChild(wrap);
+  return {wrap, input};
+}
+
+function renderMfgModal(){
+  const m = getMfg(viewingMfgId); if(!m) return;
+  document.getElementById("mfgm-title").textContent = m.name;
+  const body = document.getElementById("mfgm-body");
+  body.innerHTML = "";
+
+  const links = document.createElement("div"); links.className = "mfgm-links";
+  body.appendChild(links);
+  const refreshLinks = () => {
+    links.innerHTML = "";
+    const addLink = (text, href, ext) => { const a = document.createElement("a"); a.className = "link"; a.textContent = text; a.href = href; if(ext){ a.target = "_blank"; a.rel = "noopener"; } links.appendChild(a); };
+    if(m.url && m.url !== "#") addLink("Website ↗", m.url, true);
+    if(m.email) addLink("Email ✉", "mailto:" + m.email);
+    if(m.phone){ const c = countryByIso(m.phoneIso); addLink("Call ☎ " + c.code + " " + m.phone, "tel:" + c.code + m.phone.replace(/[^\d]/g,"")); }
+    if(!links.children.length){ links.textContent = ""; }
+  };
+  refreshLinks();
+
+  const grid = document.createElement("div"); grid.className = "mfgm-grid"; body.appendChild(grid);
+  mfgField(grid, "Name", m.name, {onSave:(v,el) => { if(!v){ el.value = m.name; return; } m.name = v; document.getElementById("mfgm-title").textContent = v; saveState(); }});
+  const g = mfgField(grid, "Group", m.group); g.input.disabled = true; g.input.dataset.alwaysEnabled = "true";
+  mfgField(grid, "Location", m.location, {onSave:v => { m.location = v || "—"; saveState(); }});
+  mfgField(grid, "MOQ", m.moq, {onSave:v => { m.moq = v || "—"; saveState(); }});
+  mfgField(grid, "Specialty", m.specialty, {wide:true, onSave:v => { m.specialty = v || "—"; saveState(); }});
+  mfgField(grid, "Website", m.url === "#" ? "" : m.url, {type:"url", placeholder:"https://…", onSave:v => { m.url = v || "#"; saveState(); refreshLinks(); }});
+  mfgField(grid, "Email", m.email, {type:"email", placeholder:"name@company.com", onSave:(v,el) => {
+    if(v && !EMAIL_RE.test(v)){ alert("Please enter a valid email address."); el.value = m.email || ""; return; }
+    m.email = v; saveState(); refreshLinks(); }});
+
+  const phoneWrap = document.createElement("div"); phoneWrap.className = "mfgm-field";
+  phoneWrap.innerHTML = '<label>Phone</label>';
+  const pr = document.createElement("div"); pr.className = "mfgm-phone"; phoneWrap.appendChild(pr);
+  const pb = document.createElement("button");
+  makeCountryPicker(pb, m.phoneIso, guardEdit(iso => { m.phoneIso = iso; saveState(); refreshLinks(); }));
+  const pi = document.createElement("input"); pi.type = "tel"; pi.placeholder = "Phone number"; pi.value = m.phone || "";
+  pi.addEventListener("change", guardEdit(e => {
+    const v = e.target.value.trim();
+    if(v && !phoneValid(v)){ alert("Please enter a valid phone number (digits, spaces, dashes or brackets only, without the country code)."); e.target.value = m.phone || ""; return; }
+    m.phone = v; e.target.value = v; saveState(); refreshLinks(); }));
+  pr.appendChild(pb); pr.appendChild(pi); grid.appendChild(phoneWrap);
+
+  const stWrap = document.createElement("div"); stWrap.className = "mfgm-field";
+  stWrap.innerHTML = '<label>Status</label>';
+  const st = document.createElement("select");
+  ["Not Contacted","RFQ Sent","Sample Requested","Sample Approved","Rejected"].forEach(opt => { const o = document.createElement("option"); o.value = opt; o.textContent = opt; if(opt === m.status) o.selected = true; st.appendChild(o); });
+  st.addEventListener("change", guardEdit(e => { m.status = e.target.value; saveState(); renderDashboard(); }));
+  stWrap.appendChild(st); grid.appendChild(stWrap);
+
+  mfgField(grid, "Quick note (shown in the table)", m.notes, {wide:true, placeholder:"Short note…", onSave:v => { m.notes = v; saveState(); }});
+
+  // Notes thread + attachments
+  const sec = document.createElement("div"); sec.className = "mfgm-section";
+  sec.innerHTML = '<h4>Notes &amp; attachments</h4>';
+  body.appendChild(sec);
+
+  const form = document.createElement("div"); form.className = "mfgm-field wide";
+  const ta = document.createElement("textarea"); ta.rows = 3; ta.placeholder = "Write a note — a call summary, a quote, a decision…";
+  const pending = document.createElement("div"); pending.className = "mfgm-pending";
+  const fileIn = document.createElement("input"); fileIn.type = "file"; fileIn.multiple = true; fileIn.id = "mfgm-file-input"; fileIn.style.marginTop = "8px";
+  const addBtn = document.createElement("button"); addBtn.type = "button"; addBtn.className = "btn btn-gold"; addBtn.id = "mfgm-add-note"; addBtn.textContent = "Add note"; addBtn.style.cssText = "align-self:flex-start;margin-top:8px;";
+  fileIn.addEventListener("change", () => { pending.textContent = fileIn.files.length ? "Attached: " + [...fileIn.files].map(f => f.name + " (" + fmtFileSize(f.size) + ")").join(", ") : ""; });
+  form.appendChild(ta); form.appendChild(fileIn); form.appendChild(pending); form.appendChild(addBtn);
+  sec.appendChild(form);
+
+  const list = document.createElement("div"); list.style.marginTop = "14px"; sec.appendChild(list);
+  const renderEntries = () => {
+    list.innerHTML = "";
+    const entries = (m.entries || []).slice().reverse();
+    if(!entries.length){ const e = document.createElement("div"); e.className = "mfgm-pending"; e.textContent = "No notes yet."; list.appendChild(e); return; }
+    entries.forEach(en => {
+      const box = document.createElement("div"); box.className = "mfgm-entry";
+      const head = document.createElement("div"); head.className = "mfgm-entry-head";
+      const who = document.createElement("span"); who.textContent = (en.by || "Someone") + " · " + new Date(en.at).toLocaleString();
+      const del = document.createElement("button"); del.type = "button"; del.className = "mfgm-del"; del.textContent = "Delete";
+      del.addEventListener("click", guardEdit(async () => {
+        if(!confirm("Delete this note" + ((en.files||[]).length ? " and its attachments" : "") + "?")) return;
+        const paths = (en.files || []).map(f => f.path);
+        if(paths.length){ try{ await sb.storage.from(MFG_BUCKET).remove(paths); }catch(e){ console.error(e); } }
+        m.entries = m.entries.filter(x => x.id !== en.id);
+        saveState(); renderEntries(); renderManufacturers();
+      }));
+      head.appendChild(who); head.appendChild(del); box.appendChild(head);
+      if(en.text){ const t = document.createElement("div"); t.className = "mfgm-entry-text"; t.textContent = en.text; box.appendChild(t); }
+      if((en.files||[]).length){
+        const fw = document.createElement("div"); fw.className = "mfgm-files";
+        en.files.forEach(f => {
+          const chip = document.createElement("button"); chip.type = "button"; chip.className = "mfgm-chip"; chip.dataset.alwaysEnabled = "true";
+          chip.textContent = "📎 " + f.name + " (" + fmtFileSize(f.size) + ")";
+          chip.addEventListener("click", async () => {
+            const win = window.open("", "_blank");
+            try{
+              const { data, error } = await sb.storage.from(MFG_BUCKET).createSignedUrl(f.path, 120, { download: false });
+              if(error) throw error;
+              if(win) win.location.href = data.signedUrl; else window.location.href = data.signedUrl;
+            }catch(err){ if(win) win.close(); alert("Couldn't open the attachment: " + (err.message || err)); }
+          });
+          fw.appendChild(chip);
+        });
+        box.appendChild(fw);
+      }
+      list.appendChild(box);
+    });
+  };
+  renderEntries();
+
+  addBtn.addEventListener("click", guardEdit(async () => {
+    const text = ta.value.trim();
+    const files = [...fileIn.files];
+    if(!text && !files.length) return;
+    const tooBig = files.find(f => f.size > MFG_MAX_FILE);
+    if(tooBig){ alert(tooBig.name + " is larger than 15 MB. Please attach a smaller file."); return; }
+    addBtn.disabled = true; addBtn.textContent = files.length ? "Uploading…" : "Saving…";
+    const uploaded = [];
+    try{
+      for(const f of files){
+        const safe = f.name.replace(/[^\w.\-]+/g, "_");
+        const path = m.id + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "-" + safe;
+        const { error } = await sb.storage.from(MFG_BUCKET).upload(path, f, { contentType: f.type || "application/octet-stream" });
+        if(error) throw error;
+        uploaded.push({ name: f.name, path, size: f.size, type: f.type || "" });
+      }
+      m.entries = (m.entries || []).concat([{ id: "e" + Date.now() + Math.random().toString(36).slice(2, 6), text, by: myDisplayName(), at: new Date().toISOString(), files: uploaded }]);
+      saveState();
+      ta.value = ""; fileIn.value = ""; pending.textContent = "";
+      renderEntries(); renderManufacturers();
+    }catch(err){
+      if(uploaded.length){ try{ await sb.storage.from(MFG_BUCKET).remove(uploaded.map(u => u.path)); }catch(e){} }
+      alert("Couldn't save the note: " + (err.message || err));
+    }finally{
+      addBtn.disabled = false; addBtn.textContent = "Add note";
+    }
+  }));
+
+  applyRolePermissions();
+}
+
+function openMfgModal(id){
+  if(!getMfg(id)) return;
+  viewingMfgId = id;
+  renderMfgModal();
+  document.getElementById("mfg-modal-overlay").classList.remove("hidden");
+}
+function closeMfgModal(){
+  closePicker();
+  document.getElementById("mfg-modal-overlay").classList.add("hidden");
+  viewingMfgId = null;
+  renderManufacturers();
+}
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const addManufacturer = guardEdit(function(){
   const name = document.getElementById("new-mfg-name").value.trim();
@@ -3049,7 +3265,7 @@ const addManufacturer = guardEdit(function(){
   if(phone && !phoneValid(phone)){ alert("Please enter a valid phone number (digits, spaces, dashes or brackets only, without the country code)."); return; }
   const phoneIso = document.getElementById("new-mfg-phone-iso").dataset.iso || DEFAULT_PHONE_ISO;
   const id = "m" + (state.nextIds.manufacturer++);
-  state.manufacturers.push({id, group:"Custom Additions", name, location, specialty, moq:"—", url, email, phoneIso, phone, status:"Not Contacted", notes:""});
+  state.manufacturers.push({id, group:"Custom Additions", name, location, specialty, moq:"—", url, email, phoneIso, phone, entries:[], status:"Not Contacted", notes:""});
   ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url","new-mfg-email","new-mfg-phone"].forEach(i => document.getElementById(i).value = "");
   populateGroupFilter();
   saveState(); renderManufacturers(); renderDashboard();
@@ -3641,6 +3857,8 @@ function bindEvents(){
   // Task modal
   document.getElementById("task-modal-close").addEventListener("click", closeTaskModal);
   document.getElementById("tm-priority").addEventListener("change", updateTmPriorityBadge);
+  document.getElementById("mfg-modal-close").addEventListener("click", closeMfgModal);
+  document.getElementById("mfg-modal-overlay").addEventListener("click", (e) => { if(e.target.id === "mfg-modal-overlay") closeMfgModal(); });
   document.getElementById("task-view-modal-close").addEventListener("click", closeTaskViewModal);
   document.getElementById("tv-close-btn").addEventListener("click", closeTaskViewModal);
   document.getElementById("tv-edit-btn").addEventListener("click", () => {
