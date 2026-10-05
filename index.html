@@ -197,6 +197,9 @@
   .cell-notes input, .cell-editable input{
     width:100%;font-family:inherit;font-size:12.5px;padding:6px 8px;border:1px solid var(--line);background:var(--glass);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
   }
+  .phone-cell{display:flex;gap:4px;}
+  .phone-cell select.phone-iso{font-family:inherit;font-size:12px;padding:6px 4px;border:1px solid var(--line);background:var(--glass);width:96px;flex:0 0 96px;cursor:pointer;}
+  .phone-cell input{flex:1;min-width:0;}
   select.status-select{
     font-family:inherit;font-size:12px;padding:5px 8px;border:none;color:#fff;font-weight:600;min-width:150px;cursor:pointer;
   }
@@ -843,11 +846,13 @@
         <input type="text" id="new-mfg-specialty" placeholder="Specialty" style="flex:2;min-width:180px;"/>
         <input type="text" id="new-mfg-url" placeholder="Website (https://…)" style="flex:1;min-width:160px;"/>
         <input type="email" id="new-mfg-email" placeholder="Email address" style="flex:1;min-width:180px;"/>
+        <select id="new-mfg-phone-iso" style="min-width:150px;"></select>
+        <input type="tel" id="new-mfg-phone" placeholder="Phone number" style="flex:1;min-width:140px;"/>
         <button class="btn btn-gold" id="add-mfg-btn">Add</button>
       </div>
     </div>
     <div class="toolbar">
-      <input type="text" id="mfg-search" placeholder="Search name, location, specialty, email…" data-always-enabled="true" />
+      <input type="text" id="mfg-search" placeholder="Search name, location, specialty, email, phone…" data-always-enabled="true" />
       <select id="mfg-group-filter" data-always-enabled="true"><option value="">All groups</option></select>
       <select id="mfg-status-filter" data-always-enabled="true">
         <option value="">All statuses</option>
@@ -860,7 +865,7 @@
       <table id="mfg-table">
         <thead><tr>
           <th style="width:190px;">Manufacturer</th><th style="width:150px;">Location</th><th>Specialty</th>
-          <th style="width:110px;">MOQ</th><th style="width:210px;">Email</th><th style="width:160px;">Status</th><th style="width:220px;">Notes</th><th style="width:30px;"></th>
+          <th style="width:110px;">MOQ</th><th style="width:210px;">Email</th><th style="width:250px;">Phone</th><th style="width:160px;">Status</th><th style="width:220px;">Notes</th><th style="width:30px;"></th>
         </tr></thead>
         <tbody id="mfg-tbody"></tbody>
       </table>
@@ -1406,7 +1411,7 @@ function seedState(){
     phases: SEED_PHASES.map(p => ({...p})),
     timelineTasks: SEED_TIMELINE_TASKS.map(t => ({...t, done:false})),
     vetting: Object.fromEntries(SEED_VETTING.map(v => [v.id, false])),
-    manufacturers: SEED_MANUFACTURERS.map(m => ({...m, status:"Not Contacted", notes:"", email:""})),
+    manufacturers: SEED_MANUFACTURERS.map(m => ({...m, status:"Not Contacted", notes:"", email:"", phoneIso:"CN", phone:""})),
     categories: SEED_CATEGORIES.map(c => ({...c})),
     lineItems: SEED_LINE_ITEMS.map(p => ({...p})),
     budget: SEED_BUDGET.map(b => ({...b})),
@@ -1443,6 +1448,8 @@ function mergeWithSeed(saved){
       status: byId[m.id]?.status || m.status,
       notes: byId[m.id]?.notes ?? m.notes,
       email: byId[m.id]?.email ?? m.email ?? "",
+      phoneIso: byId[m.id]?.phoneIso ?? m.phoneIso ?? "CN",
+      phone: byId[m.id]?.phone ?? m.phone ?? "",
     })).concat(extra);
   }
   if(Array.isArray(saved.categories)) seed.categories = saved.categories;
@@ -2643,7 +2650,7 @@ function renderManufacturers(){
       if(m.group !== g) return false;
       if(statusFilter && m.status !== statusFilter) return false;
       if(search){
-        const hay = (m.name+" "+m.location+" "+m.specialty+" "+(m.email||"")).toLowerCase();
+        const hay = (m.name+" "+m.location+" "+m.specialty+" "+(m.email||"")+" "+phoneDigits(m)+" "+(m.phone||"")).toLowerCase();
         if(!hay.includes(search)) return false;
       }
       return true;
@@ -2652,7 +2659,7 @@ function renderManufacturers(){
 
     const groupTr = document.createElement("tr");
     groupTr.className = "group-row";
-    groupTr.innerHTML = `<td colspan="8">${g} (${rows.length})</td>`;
+    groupTr.innerHTML = `<td colspan="9">${g} (${rows.length})</td>`;
     tbody.appendChild(groupTr);
 
     rows.forEach(m => {
@@ -2661,7 +2668,7 @@ function renderManufacturers(){
       tr.innerHTML = `
         <td><a class="link" href="${m.url}" target="_blank" rel="noopener">${m.name}</a></td>
         <td>${m.location}</td><td>${m.specialty}</td><td>${m.moq}</td>
-        <td class="cell-notes"></td><td></td><td class="cell-notes"></td><td></td>
+        <td class="cell-notes"></td><td class="cell-notes"><div class="phone-cell"></div></td><td></td><td class="cell-notes"></td><td></td>
       `;
       const emailInput = document.createElement("input");
       emailInput.type = "email"; emailInput.placeholder = "Add email…"; emailInput.value = m.email || "";
@@ -2671,6 +2678,20 @@ function renderManufacturers(){
         m.email = v; e.target.value = v; saveState();
       }));
       tr.children[4].appendChild(emailInput);
+
+      const phoneSel = document.createElement("select");
+      phoneSel.className = "phone-iso";
+      buildCountrySelect(phoneSel, m.phoneIso);
+      const phoneInput = document.createElement("input");
+      phoneInput.type = "tel"; phoneInput.placeholder = "Phone number"; phoneInput.value = m.phone || "";
+      phoneSel.addEventListener("change", guardEdit((e) => { m.phoneIso = e.target.value; saveState(); }));
+      phoneInput.addEventListener("change", guardEdit((e) => {
+        const v = e.target.value.trim();
+        if(v && !phoneValid(v)){ alert("Please enter a valid phone number (digits, spaces, dashes or brackets only, without the country code)."); e.target.value = m.phone || ""; return; }
+        m.phone = v; e.target.value = v; saveState();
+      }));
+      const phoneCell = tr.children[5].querySelector(".phone-cell");
+      phoneCell.appendChild(phoneSel); phoneCell.appendChild(phoneInput);
 
       const select = document.createElement("select");
       select.className = "status-select " + statusClass(m.status);
@@ -2685,12 +2706,12 @@ function renderManufacturers(){
         select.className = "status-select " + statusClass(m.status);
         saveState(); renderDashboard();
       }));
-      tr.children[5].appendChild(select);
+      tr.children[6].appendChild(select);
 
       const input = document.createElement("input");
       input.type = "text"; input.placeholder = "Add a note…"; input.value = m.notes || "";
       input.addEventListener("change", guardEdit((e) => { m.notes = e.target.value; saveState(); }));
-      tr.children[6].appendChild(input);
+      tr.children[7].appendChild(input);
 
       const del = document.createElement("span");
       del.className = "btn-del"; del.textContent = "×"; del.title = "Remove";
@@ -2698,7 +2719,7 @@ function renderManufacturers(){
         state.manufacturers = state.manufacturers.filter(x => x.id !== m.id);
         saveState(); renderManufacturers(); renderDashboard();
       }));
-      tr.children[7].appendChild(del);
+      tr.children[8].appendChild(del);
 
       tbody.appendChild(tr);
     });
@@ -2706,6 +2727,77 @@ function renderManufacturers(){
   document.getElementById("mfg-count-pill").textContent = `Showing ${shown} of ${state.manufacturers.length}`;
 }
 
+const COUNTRY_CODES = [
+  {iso:"CN", name:"China", code:"+86"},
+  {iso:"HK", name:"Hong Kong", code:"+852"},
+  {iso:"TW", name:"Taiwan", code:"+886"},
+  {iso:"VN", name:"Vietnam", code:"+84"},
+  {iso:"IN", name:"India", code:"+91"},
+  {iso:"TH", name:"Thailand", code:"+66"},
+  {iso:"TR", name:"Turkey", code:"+90"},
+  {iso:"IT", name:"Italy", code:"+39"},
+  {iso:"AU", name:"Australia", code:"+61"},
+  {iso:"NZ", name:"New Zealand", code:"+64"},
+  {iso:"LB", name:"Lebanon", code:"+961"},
+  {iso:"AE", name:"United Arab Emirates", code:"+971"},
+  {iso:"SA", name:"Saudi Arabia", code:"+966"},
+  {iso:"QA", name:"Qatar", code:"+974"},
+  {iso:"KW", name:"Kuwait", code:"+965"},
+  {iso:"BH", name:"Bahrain", code:"+973"},
+  {iso:"OM", name:"Oman", code:"+968"},
+  {iso:"JO", name:"Jordan", code:"+962"},
+  {iso:"EG", name:"Egypt", code:"+20"},
+  {iso:"US", name:"United States", code:"+1"},
+  {iso:"CA", name:"Canada", code:"+1"},
+  {iso:"GB", name:"United Kingdom", code:"+44"},
+  {iso:"FR", name:"France", code:"+33"},
+  {iso:"DE", name:"Germany", code:"+49"},
+  {iso:"ES", name:"Spain", code:"+34"},
+  {iso:"PT", name:"Portugal", code:"+351"},
+  {iso:"NL", name:"Netherlands", code:"+31"},
+  {iso:"BE", name:"Belgium", code:"+32"},
+  {iso:"CH", name:"Switzerland", code:"+41"},
+  {iso:"AT", name:"Austria", code:"+43"},
+  {iso:"SE", name:"Sweden", code:"+46"},
+  {iso:"NO", name:"Norway", code:"+47"},
+  {iso:"DK", name:"Denmark", code:"+45"},
+  {iso:"FI", name:"Finland", code:"+358"},
+  {iso:"IE", name:"Ireland", code:"+353"},
+  {iso:"PL", name:"Poland", code:"+48"},
+  {iso:"GR", name:"Greece", code:"+30"},
+  {iso:"CY", name:"Cyprus", code:"+357"},
+  {iso:"RU", name:"Russia", code:"+7"},
+  {iso:"JP", name:"Japan", code:"+81"},
+  {iso:"KR", name:"South Korea", code:"+82"},
+  {iso:"SG", name:"Singapore", code:"+65"},
+  {iso:"MY", name:"Malaysia", code:"+60"},
+  {iso:"ID", name:"Indonesia", code:"+62"},
+  {iso:"PH", name:"Philippines", code:"+63"},
+  {iso:"PK", name:"Pakistan", code:"+92"},
+  {iso:"BD", name:"Bangladesh", code:"+880"},
+  {iso:"LK", name:"Sri Lanka", code:"+94"},
+  {iso:"ZA", name:"South Africa", code:"+27"},
+  {iso:"NG", name:"Nigeria", code:"+234"},
+  {iso:"KE", name:"Kenya", code:"+254"},
+  {iso:"MA", name:"Morocco", code:"+212"},
+  {iso:"BR", name:"Brazil", code:"+55"},
+  {iso:"MX", name:"Mexico", code:"+52"},
+  {iso:"AR", name:"Argentina", code:"+54"},
+  {iso:"CL", name:"Chile", code:"+56"},
+  {iso:"CO", name:"Colombia", code:"+57"}
+];
+const DEFAULT_PHONE_ISO = "CN";
+function flagEmoji(iso){ return String.fromCodePoint(...[...iso].map(ch => 127397 + ch.charCodeAt(0))); }
+function buildCountrySelect(sel, iso){
+  COUNTRY_CODES.forEach(c => {
+    const o = document.createElement("option");
+    o.value = c.iso; o.textContent = flagEmoji(c.iso) + " " + c.code + " " + c.name;
+    sel.appendChild(o);
+  });
+  sel.value = COUNTRY_CODES.some(c => c.iso === iso) ? iso : DEFAULT_PHONE_ISO;
+}
+function phoneValid(v){ return /^[0-9 ()\-.]+$/.test(v) && v.replace(/\D/g,"").length >= 5 && v.replace(/\D/g,"").length <= 14; }
+function phoneDigits(m){ const c = COUNTRY_CODES.find(x => x.iso === m.phoneIso); return m.phone ? ((c?c.code:"") + " " + m.phone) : ""; }
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const addManufacturer = guardEdit(function(){
   const name = document.getElementById("new-mfg-name").value.trim();
@@ -2715,9 +2807,12 @@ const addManufacturer = guardEdit(function(){
   const url = document.getElementById("new-mfg-url").value.trim() || "#";
   const email = document.getElementById("new-mfg-email").value.trim();
   if(email && !EMAIL_RE.test(email)){ alert("Please enter a valid email address."); return; }
+  const phone = document.getElementById("new-mfg-phone").value.trim();
+  if(phone && !phoneValid(phone)){ alert("Please enter a valid phone number (digits, spaces, dashes or brackets only, without the country code)."); return; }
+  const phoneIso = document.getElementById("new-mfg-phone-iso").value;
   const id = "m" + (state.nextIds.manufacturer++);
-  state.manufacturers.push({id, group:"Custom Additions", name, location, specialty, moq:"—", url, email, status:"Not Contacted", notes:""});
-  ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url","new-mfg-email"].forEach(i => document.getElementById(i).value = "");
+  state.manufacturers.push({id, group:"Custom Additions", name, location, specialty, moq:"—", url, email, phoneIso, phone, status:"Not Contacted", notes:""});
+  ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url","new-mfg-email","new-mfg-phone"].forEach(i => document.getElementById(i).value = "");
   populateGroupFilter();
   saveState(); renderManufacturers(); renderDashboard();
 });
@@ -3277,6 +3372,7 @@ const addNote = guardEdit(function(){
    INIT
 ============================================================ */
 function bindEvents(){
+  { const ps = document.getElementById("new-mfg-phone-iso"); if(ps && !ps.options.length) buildCountrySelect(ps, DEFAULT_PHONE_ISO); }
   document.getElementById("mfg-search").addEventListener("input", renderManufacturers);
   document.getElementById("mfg-group-filter").addEventListener("change", renderManufacturers);
   document.getElementById("mfg-status-filter").addEventListener("change", renderManufacturers);
@@ -3300,7 +3396,7 @@ function bindEvents(){
   });
 
   // Enter-to-submit on the small text inputs, for convenience
-  ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url","new-mfg-email"].forEach(id => {
+  ["new-mfg-name","new-mfg-location","new-mfg-specialty","new-mfg-url","new-mfg-email","new-mfg-phone"].forEach(id => {
     document.getElementById(id).addEventListener("keydown", (e) => { if(e.key==="Enter") addManufacturer(); });
   });
 
