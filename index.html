@@ -215,6 +215,7 @@
     font-family:inherit;font-size:12px;padding:5px 8px;border:none;color:#fff;font-weight:600;min-width:150px;cursor:pointer;
   }
   .st-not-contacted{background:var(--st-none);}
+  .st-manufacturer-inquiry{background:#8E7CA6;}
   .st-rfq-sent{background:var(--st-rfq);color:#2A2A28 !important;}
   .st-sample-requested{background:var(--st-sample);}
   .st-sample-approved{background:var(--st-approved);}
@@ -887,7 +888,7 @@
       <select id="mfg-group-filter" data-always-enabled="true"><option value="">All groups</option></select>
       <select id="mfg-status-filter" data-always-enabled="true">
         <option value="">All statuses</option>
-        <option>Not Contacted</option><option>RFQ Sent</option><option>Sample Requested</option>
+        <option>Not Contacted</option><option>Manufacturer Inquiry</option><option>RFQ Sent</option><option>Sample Requested</option>
         <option>Sample Approved</option><option>Rejected</option>
       </select>
       <span class="count-pill" id="mfg-count-pill"></span>
@@ -2739,7 +2740,7 @@ function renderManufacturers(){
 
       const select = document.createElement("select");
       select.className = "status-select " + statusClass(m.status);
-      ["Not Contacted","RFQ Sent","Sample Requested","Sample Approved","Rejected"].forEach(opt => {
+      ["Not Contacted","Manufacturer Inquiry","RFQ Sent","Sample Requested","Sample Approved","Rejected"].forEach(opt => {
         const o = document.createElement("option");
         o.value = opt; o.textContent = opt;
         if(opt === m.status) o.selected = true;
@@ -3147,7 +3148,7 @@ function renderMfgModal(){
   const stWrap = document.createElement("div"); stWrap.className = "mfgm-field";
   stWrap.innerHTML = '<label>Status</label>';
   const st = document.createElement("select");
-  ["Not Contacted","RFQ Sent","Sample Requested","Sample Approved","Rejected"].forEach(opt => { const o = document.createElement("option"); o.value = opt; o.textContent = opt; if(opt === m.status) o.selected = true; st.appendChild(o); });
+  ["Not Contacted","Manufacturer Inquiry","RFQ Sent","Sample Requested","Sample Approved","Rejected"].forEach(opt => { const o = document.createElement("option"); o.value = opt; o.textContent = opt; if(opt === m.status) o.selected = true; st.appendChild(o); });
   st.addEventListener("change", guardEdit(e => { m.status = e.target.value; saveState(); renderDashboard(); }));
   stWrap.appendChild(st); grid.appendChild(stWrap);
 
