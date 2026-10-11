@@ -815,7 +815,7 @@
       <div class="stat-card"><div class="num" id="d-tasks-open">–</div><div class="label">Open tasks</div></div>
       <div class="stat-card"><div class="num" id="d-tasks-doing">–</div><div class="label">Tasks in progress</div></div>
       <div class="stat-card"><div class="num" id="d-tasks-done">–</div><div class="label">Tasks done</div></div>
-      <div class="stat-card"><div class="num" id="d-mfg-contacted">–</div><div class="label">Manufacturers contacted / 30</div></div>
+      <div class="stat-card"><div class="num" id="d-mfg-contacted">–</div><div class="label">Manufacturers contacted</div></div>
       <div class="stat-card"><div class="num" id="d-budget-spent">–</div><div class="label">Budget committed (AUD)</div></div>
     </div>
     <div class="panel">
@@ -1314,6 +1314,32 @@ const SEED_MANUFACTURERS = [
   { id:"m28", group:"Low-MOQ / Small-Batch", name:"Yiwu Huili Jewelry Company", location:"Yiwu, Zhejiang", specialty:"925 silver + copper; very low sampling MOQ", moq:"2-30 pcs (pairs)", url:"https://ywhljewelry.en.made-in-china.com/" },
   { id:"m29", group:"Low-MOQ / Small-Batch", name:"Yiwu Juzhi Jewelry Factory", location:"Yiwu, Zhejiang", specialty:"925 silver rings and necklaces", moq:"Varies", url:"https://925silver8.goldsupplier.com/" },
   { id:"m30", group:"Low-MOQ / Small-Batch", name:"Yiwu Jingwu Jewelry Factory", location:"Yiwu, Zhejiang", specialty:"Silver jewelry, bracelets, necklaces, pendants since 2007", moq:"Varies", url:"https://ywjw.goldsupplier.com/" },
+  { id:"m31", group:"Vermeil / Silver Generalists", name:"Endless Jewel", location:"Panyu, Guangzhou", specialty:"925 silver, brass and vermeil; OEM/ODM/private label", moq:"No fixed MOQ", url:"https://endlessjewel.cn/", email:"sale33@endlessjewe.com", phoneIso:"CN", phone:"198 3599 9018" },
+  { id:"m32", group:"Vermeil / Silver Generalists", name:"Rexjewel", location:"Qingdao, Shandong", specialty:"Vermeil focus; OEM/ODM/private label", moq:"Varies", url:"https://www.rexjewel.com/", email:"", phoneIso:"CN", phone:"532 8626 6636" },
+  { id:"m33", group:"Vermeil / Silver Generalists", name:"Nendine", location:"Panyu, Guangzhou", specialty:"Silver and vermeil jewelry, OEM/ODM", moq:"100 per color & style", url:"https://nendine.com/", email:"sales@nendine.com", phoneIso:"CN", phone:"135 3554 3142" },
+  { id:"m34", group:"Vermeil / Silver Generalists", name:"Jewepiter", location:"Huangpu, Guangzhou", specialty:"925 silver with CZ", moq:"50", url:"https://www.jewepiter.com/", email:"info@jewepiter.com", phoneIso:"CN", phone:"180 2721 9190" },
+  { id:"m35", group:"Vermeil / Silver Generalists", name:"YIBI Jewelry", location:"Longhua, Shenzhen", specialty:"OEM/ODM silver, brass and stainless jewelry", moq:"Varies", url:"https://www.chinayibi.com/", email:"anny@chinayibi.com", phoneIso:"CN", phone:"150 3711 3107" },
+  { id:"m36", group:"Vermeil / Silver Generalists", name:"Clingold", location:"Panyu, Guangzhou", specialty:"Gold vermeil OEM/ODM", moq:"Flexible", url:"https://clingold.com/", email:"sales@clingold.com", phoneIso:"CN", phone:"159 1582 2286" },
+  { id:"m37", group:"Vermeil / Silver Generalists", name:"VerySelection", location:"Hong Kong office / Shenzhen warehouse", specialty:"925 silver jewelry", moq:"No MOQ", url:"https://www.veryselection.com/", email:"service@veryselection.com", phoneIso:"CN", phone:"137 1513 4410" },
+  { id:"m38", group:"Vermeil / Silver Generalists", name:"UVARA Jewelry", location:"Dongguan, Guangdong", specialty:"925 silver and vermeil", moq:"50", url:"https://uvarajewelry.com/", email:"", phoneIso:"CN", phone:"186 7369 8686" },
+  { id:"m39", group:"Vermeil / Silver Generalists", name:"Zhefan Jewelry", location:"Guangzhou / Meizhou", specialty:"Silver jewelry, OEM/ODM", moq:"60 per design", url:"https://www.zhefanjewelry.com/", email:"sales3@zhefanjewelry.com", phoneIso:"CN", phone:"188 1927 7817" },
+  { id:"m40", group:"Vermeil / Silver Generalists", name:"Variation", location:"India", specialty:"Vermeil and IGI lab-diamond jewelry", moq:"50", url:"https://variation.in/", email:"design@variation.in", phoneIso:"IN", phone:"96992 05852" },
+  { id:"m41", group:"Vermeil / Silver Generalists", name:"Essentials Jewelry", location:"Jaipur, India", specialty:"Silver jewelry (India-based factory)", moq:"Varies", url:"https://www.essentials-jewelry.com/", email:"", phoneIso:"IN", phone:"931 4494 017" },
+  { id:"m42", group:"Vermeil / Silver Generalists", name:"Loytee", location:"Samut Prakan, Thailand", specialty:"Silver jewelry", moq:"Varies", url:"https://www.loytee.com/", email:"loytee@loytee.com", phoneIso:"TH", phone:"2 743 0361" },
+  { id:"m43", group:"Vermeil / Silver Generalists", name:"Primarose", location:"Thailand", specialty:"Silver jewelry", moq:"30 per design", url:"https://www.primarose.com/", email:"", phoneIso:"TH", phone:"" },
+  { id:"m44", group:"Vermeil / Silver Generalists", name:"Guangzhou Yin Fu Jewelry", location:"Panyu, Guangzhou", specialty:"Silver jewelry (marketplace store)", moq:"Varies", url:"https://yinfujewelry.en.made-in-china.com/", email:"", phoneIso:"CN", phone:"" },
+  { id:"m45", group:"Vermeil / Silver Generalists", name:"ELF925", location:"Samut Prakan, Thailand", specialty:"925 silver jewelry", moq:"Varies", url:"https://www.elf925.com/", email:"", phoneIso:"TH", phone:"2 463 2183" },
+  { id:"m46", group:"Zircon (CZ) Specialists", name:"Guangzhou Yujinfu Jewelry Factory", location:"Guangzhou", specialty:"Silver and CZ jewelry", moq:"Varies", url:"https://www.925yujinfu.com/", email:"", phoneIso:"CN", phone:"" },
+  { id:"m47", group:"Zircon (CZ) Specialists", name:"Guangzhou Peishang Jewelry Co., Ltd.", location:"Panyu, Guangzhou", specialty:"CZ and silver jewelry (marketplace store)", moq:"1-30", url:"https://gzpeishang.en.made-in-china.com/", email:"", phoneIso:"CN", phone:"" },
+  { id:"m48", group:"Zircon (CZ) Specialists", name:"Wuzhou Qianjian Jewelry Co., Ltd.", location:"Wuzhou, Guangxi", specialty:"CZ, moissanite and lab jewelry, OEM/ODM (marketplace store)", moq:"Varies", url:"https://qianjianjewelry.en.made-in-china.com/", email:"", phoneIso:"CN", phone:"" },
+  { id:"m49", group:"Lab-Grown Diamond Specialists", name:"Redleaf Jewelry", location:"Wuzhou, Guangxi", specialty:"Lab-grown diamond and gemstone jewelry", moq:"Varies", url:"https://www.redleafjewelry.com/", email:"Tina-Liang@redleafjewelry.com", phoneIso:"CN", phone:"134 7140 0192" },
+  { id:"m50", group:"Lab-Grown Diamond Specialists", name:"Better Star Lab Diamond & Jewelry", location:"Zhengzhou, Henan", specialty:"Lab-grown diamonds and jewelry, OEM/ODM", moq:"Varies", url:"https://www.betterstardiamond.com/", email:"Gwyneth@betterstar.net", phoneIso:"CN", phone:"151 3891 8636" },
+  { id:"m51", group:"Lab-Grown Diamond Specialists", name:"XingSheng Jewelry", location:"Wuzhou, Guangxi", specialty:"Lab-grown and gemstone jewelry", moq:"Varies", url:"https://www.xingshengjewelry.com/", email:"xingshengjewelry@gmail.com", phoneIso:"CN", phone:"191 0774 8698" },
+  { id:"m52", group:"Lab-Grown Diamond Specialists", name:"Henan Yuda Crystal Co., Ltd", location:"Zhengzhou, Henan", specialty:"Loose/rough lab-grown stones only (no finished jewelry)", moq:"Varies", url:"https://www.labs-diamond.com/", email:"Amanda@yudacrystal.com", phoneIso:"CN", phone:"" },
+  { id:"m53", group:"Lab-Grown Diamond Specialists", name:"Ningbo Crysdiam Technology Co., Ltd.", location:"Ningbo, Zhejiang", specialty:"Lab-grown diamond technology and stones", moq:"Varies", url:"https://www.crysdiamonline.com/", email:"", phoneIso:"CN", phone:"135 1588 7660" },
+  { id:"m54", group:"Low-MOQ / Small-Batch", name:"Oahlan", location:"Guangzhou factory, HK office", specialty:"Small-batch jewelry", moq:"3 pcs", url:"https://www.oahlanjewelry.com/", email:"cassie@oahlanjewelry.com", phoneIso:"CN", phone:"136 5741 1482" },
+  { id:"m55", group:"Low-MOQ / Small-Batch", name:"OOTB Jewelry", location:"Guangzhou", specialty:"Low-MOQ jewelry; stock 10-20, custom 50-100", moq:"10-20 stock / 50-100 custom", url:"https://www.ootbjewelry.com/", email:"bruce_hou_ootbjewelry@outlook.com", phoneIso:"CN", phone:"" },
+  { id:"m56", group:"Low-MOQ / Small-Batch", name:"Haifeng Changmao Jewelry Factory", location:"Shanwei, Guangdong", specialty:"Small-batch jewelry (marketplace store)", moq:"5 pcs", url:"https://cmjewellry.en.made-in-china.com/", email:"", phoneIso:"CN", phone:"" },
 ];
 
 const SEED_PHASES = [
@@ -1455,7 +1481,7 @@ function seedState(){
     phases: SEED_PHASES.map(p => ({...p})),
     timelineTasks: SEED_TIMELINE_TASKS.map(t => ({...t, done:false})),
     vetting: Object.fromEntries(SEED_VETTING.map(v => [v.id, false])),
-    manufacturers: SEED_MANUFACTURERS.map(m => ({...m, status:"Not Contacted", notes:"", email:"", phoneIso:"CN", phone:"", entries:[]})),
+    manufacturers: SEED_MANUFACTURERS.map(m => ({...m, status:"Not Contacted", notes:"", email:m.email||"", phoneIso:m.phoneIso||"CN", phone:m.phone||"", entries:[]})),
     categories: SEED_CATEGORIES.map(c => ({...c})),
     lineItems: SEED_LINE_ITEMS.map(p => ({...p})),
     budget: SEED_BUDGET.map(b => ({...b})),
