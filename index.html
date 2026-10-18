@@ -196,6 +196,8 @@
   .group-row td a.group-link:hover{color:var(--gold-deep);}
   .group-row td a.group-back{font-weight:600;font-size:12px;letter-spacing:0;text-transform:none;color:var(--gold-deep);margin-left:14px;text-decoration:underline;cursor:pointer;}
   .group-row td a.group-back:hover{color:#000;}
+  .mfgm-savebar{position:sticky;bottom:-1px;display:flex;align-items:center;gap:12px;padding:12px 0;margin-top:14px;background:linear-gradient(to top,rgba(240,233,220,0.98) 70%,rgba(240,233,220,0));z-index:2;}
+  .mfgm-savemsg{font-weight:700;color:var(--gold-deep);font-size:13px;}
   a.link{color:var(--gold-deep);text-decoration:underline;font-weight:600;}
   a.link:hover{color:var(--ink);}
   .cell-notes input, .cell-editable input{
@@ -3262,6 +3264,20 @@ function renderMfgModal(){
 
   mfgField(grid, "Quick note (shown in the table)", m.notes, {wide:true, placeholder:"Short note…", onSave:v => { m.notes = v; saveState(); }});
 
+  // Save bar: commits every field, saves, refreshes the table, closes the window.
+  const saveBar = document.createElement("div"); saveBar.className = "mfgm-savebar";
+  const saveBtn = document.createElement("button"); saveBtn.type = "button"; saveBtn.className = "btn btn-gold"; saveBtn.id = "mfgm-save"; saveBtn.textContent = "Save changes";
+  const saveMsg = document.createElement("span"); saveMsg.className = "mfgm-savemsg";
+  saveBtn.addEventListener("click", guardEdit(() => {
+    grid.querySelectorAll("input, select").forEach(el => el.dispatchEvent(new Event("change", {bubbles:true})));
+    saveState();
+    renderManufacturers(); renderDashboard();
+    saveMsg.textContent = "Saved ✓";
+    setTimeout(closeMfgModal, 350);
+  }));
+  saveBar.appendChild(saveBtn); saveBar.appendChild(saveMsg);
+  body.appendChild(saveBar);
+
   // Notes thread + attachments
   const sec = document.createElement("div"); sec.className = "mfgm-section";
   sec.innerHTML = '<h4>Notes &amp; attachments</h4>';
@@ -3345,6 +3361,7 @@ function renderMfgModal(){
     }
   }));
 
+  body.appendChild(saveBar); // keep the Save bar at the very bottom
   applyRolePermissions();
 }
 
