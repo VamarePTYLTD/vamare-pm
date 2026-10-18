@@ -192,6 +192,9 @@
     background:rgba(201,164,103,0.12);font-weight:700;font-size:12px;letter-spacing:0.5px;text-transform:uppercase;
     color:var(--gold-deep);padding:8px 12px;border-bottom:1px solid var(--line);
   }
+  .group-row td a.group-link{color:#000;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-weight:800;}
+  .group-row td a.group-link:hover{color:var(--gold-deep);}
+  .group-row td .group-hint{font-weight:500;font-size:11px;letter-spacing:0;text-transform:none;color:var(--ink-soft,#6b6a63);margin-left:10px;}
   a.link{color:var(--gold-deep);text-decoration:underline;font-weight:600;}
   a.link:hover{color:var(--ink);}
   .cell-notes input, .cell-editable input{
@@ -2785,7 +2788,18 @@ function renderManufacturers(){
 
     const groupTr = document.createElement("tr");
     groupTr.className = "group-row";
-    groupTr.innerHTML = `<td colspan="9">${g} (${rows.length})</td>`;
+    groupTr.innerHTML = `<td colspan="9"><a class="group-link" href="#"></a><span class="group-hint"></span></td>`;
+    const gl = groupTr.querySelector(".group-link");
+    gl.textContent = `${g} (${rows.length})`;
+    gl.title = groupFilter ? "Show all categories" : "Show only this category";
+    groupTr.querySelector(".group-hint").textContent = groupFilter ? "← back to all categories" : "";
+    gl.addEventListener("click", (e) => {
+      e.preventDefault();
+      document.getElementById("mfg-group-filter").value = groupFilter ? "" : g;
+      renderManufacturers();
+      const t = document.getElementById("mfg-table");
+      if(t && t.scrollIntoView) t.scrollIntoView({block:"start"});
+    });
     tbody.appendChild(groupTr);
 
     rows.forEach(m => {
