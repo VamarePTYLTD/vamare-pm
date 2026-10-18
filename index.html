@@ -194,7 +194,8 @@
   }
   .group-row td a.group-link{color:#000;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-weight:800;}
   .group-row td a.group-link:hover{color:var(--gold-deep);}
-  .group-row td .group-hint{font-weight:500;font-size:11px;letter-spacing:0;text-transform:none;color:var(--ink-soft,#6b6a63);margin-left:10px;}
+  .group-row td a.group-back{font-weight:600;font-size:12px;letter-spacing:0;text-transform:none;color:var(--gold-deep);margin-left:14px;text-decoration:underline;cursor:pointer;}
+  .group-row td a.group-back:hover{color:#000;}
   a.link{color:var(--gold-deep);text-decoration:underline;font-weight:600;}
   a.link:hover{color:var(--ink);}
   .cell-notes input, .cell-editable input{
@@ -1924,6 +1925,7 @@ async function onLoggedIn(user){
   renderAll();
   bindEvents();
   applyRolePermissions();
+  restoreSavedTab();
   subscribeRealtime();
   loadNotificationHistory();
   renderNotifBell();
@@ -2081,6 +2083,13 @@ function switchTab(id){
   TABS.forEach(t => document.getElementById("tab-"+t.id).classList.toggle("hidden", t.id !== id));
   document.querySelectorAll(".nav-item").forEach(el => el.classList.toggle("active", el.dataset.tab === id));
   if(id === "dashboard") renderDashboard();
+  try{ localStorage.setItem("vamare_active_tab", id); }catch(e){}
+}
+function restoreSavedTab(){
+  try{
+    const id = localStorage.getItem("vamare_active_tab");
+    if(id && TABS.some(t => t.id === id)) switchTab(id);
+  }catch(e){}
 }
 
 /* ============================================================
@@ -2745,6 +2754,7 @@ function renderTimeline(){
 ============================================================ */
 function populateGroupFilter(){
   const sel = document.getElementById("mfg-group-filter");
+  const prevFilter = sel.value;
   sel.querySelectorAll("option:not(:first-child)").forEach(o=>o.remove());
   const groups = [...new Set(state.manufacturers.map(m => m.group))];
   groups.forEach(g => {
@@ -2752,6 +2762,7 @@ function populateGroupFilter(){
     opt.value = g; opt.textContent = g;
     sel.appendChild(opt);
   });
+  if(prevFilter && groups.includes(prevFilter)) sel.value = prevFilter;
   // Group picker in the "Add a manufacturer" form (keeps the current choice).
   const addSel = document.getElementById("new-mfg-group");
   if(addSel){
@@ -2788,18 +2799,21 @@ function renderManufacturers(){
 
     const groupTr = document.createElement("tr");
     groupTr.className = "group-row";
-    groupTr.innerHTML = `<td colspan="9"><a class="group-link" href="#"></a><span class="group-hint"></span></td>`;
+    groupTr.innerHTML = `<td colspan="9"><a class="group-link" href="#"></a><a class="group-back" href="#"></a></td>`;
     const gl = groupTr.querySelector(".group-link");
     gl.textContent = `${g} (${rows.length})`;
     gl.title = groupFilter ? "Show all categories" : "Show only this category";
-    groupTr.querySelector(".group-hint").textContent = groupFilter ? "← back to all categories" : "";
-    gl.addEventListener("click", (e) => {
+    const gb = groupTr.querySelector(".group-back");
+    if(groupFilter){ gb.textContent = "← back to all categories"; } else { gb.remove(); }
+    const toggleGroup = (e) => {
       e.preventDefault();
       document.getElementById("mfg-group-filter").value = groupFilter ? "" : g;
       renderManufacturers();
       const t = document.getElementById("mfg-table");
       if(t && t.scrollIntoView) t.scrollIntoView({block:"start"});
-    });
+    };
+    gl.addEventListener("click", toggleGroup);
+    gb.addEventListener("click", toggleGroup);
     tbody.appendChild(groupTr);
 
     rows.forEach(m => {
