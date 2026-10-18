@@ -3209,7 +3209,14 @@ function mfgField(grid, label, value, opts){
 }
 
 function renderMfgModal(){
-  const m = getMfg(viewingMfgId); if(!m) return;
+  if(!getMfg(viewingMfgId)) return;
+  // Always edit the CURRENT record in `state`. A live-sync update from another
+  // device (or the echo of our own save) replaces `state` with fresh objects, so
+  // holding on to one object would make later edits go to a stale copy and never save.
+  const m = new Proxy({}, {
+    get:(_, k) => { const o = getMfg(viewingMfgId); return o ? o[k] : undefined; },
+    set:(_, k, v) => { const o = getMfg(viewingMfgId); if(o) o[k] = v; return true; }
+  });
   document.getElementById("mfgm-title").textContent = m.name;
   const body = document.getElementById("mfgm-body");
   body.innerHTML = "";
