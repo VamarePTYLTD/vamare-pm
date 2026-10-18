@@ -196,9 +196,7 @@
   .group-row td a.group-link:hover{color:var(--gold-deep);}
   .group-row td a.group-back{font-weight:600;font-size:12px;letter-spacing:0;text-transform:none;color:var(--gold-deep);margin-left:14px;text-decoration:underline;cursor:pointer;}
   .group-row td a.group-back:hover{color:#000;}
-  .mfgm-savebar{display:flex;align-items:center;gap:12px;padding:16px 0 4px;margin-top:18px;border-top:1px solid var(--line);}
-  .mfgm-head-actions{display:flex;align-items:center;gap:14px;}
-  .mfgm-save-top{padding:8px 16px;font-size:13px;}
+  .mfgm-savebar{display:flex;align-items:center;gap:12px;margin:14px 0 4px;}
   .mfgm-savemsg{font-weight:700;color:var(--gold-deep);font-size:13px;}
   a.link{color:var(--gold-deep);text-decoration:underline;font-weight:600;}
   a.link:hover{color:var(--ink);}
@@ -1160,7 +1158,7 @@
     <div class="task-modal mfg-modal">
       <div class="task-modal-head">
         <h3 id="mfgm-title">Manufacturer</h3>
-        <div class="mfgm-head-actions"><button type="button" class="btn btn-gold mfgm-save-top" id="mfgm-save-top">Save changes</button><span class="task-modal-close" id="mfg-modal-close" data-always-enabled="true">&times;</span></div>
+        <span class="task-modal-close" id="mfg-modal-close" data-always-enabled="true">&times;</span>
       </div>
       <div class="task-modal-body" id="mfgm-body"></div>
     </div>
@@ -3275,12 +3273,8 @@ function renderMfgModal(){
     saveState();
     renderManufacturers(); renderDashboard();
     saveMsg.textContent = "Saved ✓";
-    topSave.textContent = "Saved ✓";
-    setTimeout(() => { topSave.textContent = "Save changes"; closeMfgModal(); }, 350);
+    setTimeout(closeMfgModal, 350);
   });
-  const topSave = document.getElementById("mfgm-save-top");
-  topSave.textContent = "Save changes";
-  topSave.onclick = doSave;
   saveBtn.addEventListener("click", doSave);
   saveBar.appendChild(saveBtn); saveBar.appendChild(saveMsg);
   body.appendChild(saveBar);
@@ -3368,7 +3362,6 @@ function renderMfgModal(){
     }
   }));
 
-  body.appendChild(saveBar); // keep the Save bar at the very bottom
   applyRolePermissions();
 }
 
