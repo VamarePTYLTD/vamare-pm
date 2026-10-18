@@ -1551,8 +1551,14 @@ function mergeWithSeed(saved){
     const extra = saved.manufacturers.filter(m => !seed.manufacturers.some(s=>s.id===m.id));
     const deleted = new Set(Array.isArray(saved.deletedMfgIds) ? saved.deletedMfgIds : []);
     seed.deletedMfgIds = [...deleted];
+    // Details the user can edit in the manufacturer window (name, group, location, MOQ,
+    // specialty, website) must come from the saved copy — otherwise every reload or
+    // live-sync would put the original seed text back and edits would look "unsaved".
+    const EDITABLE = ["name","group","location","specialty","moq","url"];
+    const savedEdits = (id) => { const sv = byId[id], out = {}; if(sv) EDITABLE.forEach(k => { if(sv[k] !== undefined && sv[k] !== null && sv[k] !== "") out[k] = sv[k]; }); return out; };
     seed.manufacturers = seed.manufacturers.filter(m => !deleted.has(m.id)).map(m => ({
       ...m,
+      ...savedEdits(m.id),
       status: byId[m.id]?.status || m.status,
       notes: byId[m.id]?.notes ?? m.notes,
       email: byId[m.id]?.email ?? m.email ?? "",
